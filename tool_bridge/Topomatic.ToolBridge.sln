@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36310.24 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Topomatic.ToolBridge", "Topomatic.ToolBridge.csproj", "{DF5BFC1E-AE90-4289-A93D-976612F4057E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DF5BFC1E-AE90-4289-A93D-976612F4057E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DF5BFC1E-AE90-4289-A93D-976612F4057E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DF5BFC1E-AE90-4289-A93D-976612F4057E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DF5BFC1E-AE90-4289-A93D-976612F4057E}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7FACE32A-9596-4198-B52F-E4063D10789D}
+	EndGlobalSection
+EndGlobal

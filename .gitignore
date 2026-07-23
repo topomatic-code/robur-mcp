@@ -1,0 +1,19 @@
+Out/
+*.scc
+*.log
+*.user
+*.suo
+*.cachefile
+*.ncb
+*.orig
+!.gitignore
+tool_bridge/obj/
+tool_bridge/bin/
+tool_bridge/.vs/
+tool_bridge/packages/
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+
+build/

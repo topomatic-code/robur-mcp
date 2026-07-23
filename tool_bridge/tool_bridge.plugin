@@ -1,0 +1,10 @@
+{
+  "assemblies": {
+    "tool_bridge.controller": {
+      "assembly": "Topomatic.ToolBridge.dll, Topomatic.ToolBridge.ToolBridgePluginHost"
+    }
+  },
+  "broadcasts": {
+    "tool_request": "generate_tools"
+  }
+}

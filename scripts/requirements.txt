@@ -1,0 +1,2 @@
+-r ../mcp_server/requirements.txt
+pyinstaller

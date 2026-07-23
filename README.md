@@ -1,0 +1,81 @@
+# robur_mcp
+
+`robur_mcp` - плагин для Topomatic Robur, поднимающий MCP-сервер с инструментами платформы Robur для внешних языковых моделей и агентов.
+
+Проект состоит из двух частей:
+
+- `tool_bridge` - C#-плагин для Topomatic Robur, работающий внутри платформы и получающий доступ к активному проекту и моделям.
+- `mcp_server` - Python HTTP MCP-сервер, принимающий и проксирующий MCP-запросы в плагин через Windows named pipe.
+
+## Что умеет проект
+
+Проект предоставляет инструменты для:
+
+- работы с активным проектом;
+- работы с активным чертежом;
+- взаимодействия с видовым экраном;
+- чтения информации из некоторых моделей.
+
+## Архитектура
+
+Поток выполнения выглядит так:
+
+1. Пользователь или внешний MCP-клиент вызывает инструмент на Python MCP-сервере.
+2. `mcp_server` отправляет JSON-запрос в именованный канал `\\.\pipe\robur_tool_bridge`.
+3. `tool_bridge` принимает запрос внутри процесса Topomatic/Robur.
+4. Плагин находит нужный tool, выполняет его и возвращает результат.
+5. Python-сервер отдает результат клиенту в формате MCP.
+
+Ключевые файлы:
+
+- `tool_bridge/ToolBridgeModule.cs` - команды и регистрация провайдеров инструментов;
+- `tool_bridge/ToolManager.cs` - загрузка и вызов инструментов;
+- `tool_bridge/ToolBridgePipeServer.cs` - pipe-сервер между Python и плагином;
+- `tool_bridge/McpServerBootstrap.cs` - запуск упакованного Python MCP-сервера из плагина;
+- `mcp_server/main.py` - HTTP MCP-сервер;
+- `mcp_server/tool_bridge_pipe_client.py` - pipe-клиент для связи с C#-частью.
+
+## Структура репозитория
+
+```text
+robur_mcp/
+|- tool_bridge/         C#-плагин для Topomatic/Robur
+|- mcp_server/          Python MCP-сервер
+|- scripts/             служебные скрипты
+|- Out/                 выходные артефакты и зависимости среды Topomatic Robur
+\- README.md
+```
+
+## Сборка TPM-пакета
+
+Из корня репозитория установите зависимости:
+
+```bash
+python -m pip install -r scripts/requirements.txt
+dotnet tool restore
+```
+
+Требуются установленные MSBuild и .NET SDK. Obfuscar восстанавливается из `dotnet-tools.json`.
+
+Запустите сборку TPM-пакета:
+
+```bash
+python scripts/build_tpm.py
+```
+
+Готовый пакет создаётся в `build/`. Его содержимое очищается перед сборкой.
+
+## Управление mcp-сервером
+
+После загрузки плагина в приложении доступны команды:
+
+- `tool_bridge_init` - запускает named pipe bridge;
+- `tool_bridge_shutdown` - останавливает pipe bridge;
+- `mcp_server_run` - запускает упакованный MCP-сервер;
+- `mcp_server_shutdown` - останавливает MCP-сервер;
+- `mcp_run` - запускает named pipe bridge и MCP-сервер.
+
+Сервер по умолчанию поднимается на:
+
+- `http://127.0.0.1:8000/mcp`
+- `http://127.0.0.1:8000/health`
