@@ -52,10 +52,9 @@ robur_mcp/
 
 ```bash
 python -m pip install -r scripts/requirements.txt
-dotnet tool restore
 ```
 
-Требуются установленные MSBuild и .NET SDK. Obfuscar восстанавливается из `dotnet-tools.json`.
+Требуются установленные MSBuild и .NET SDK.
 
 Запустите сборку TPM-пакета:
 

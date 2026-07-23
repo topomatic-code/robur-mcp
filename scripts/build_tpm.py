@@ -31,6 +31,7 @@ DEFAULT_PACKAGE_NAME = "robur_mcp"
 DEFAULT_VERSION = "0.1"
 DEFAULT_AUTHOR = "Topomatic"
 SERVER_EXECUTABLE_NAME = "robur_mcp_server.exe"
+BRIDGE_ASSEMBLY_NAME = "Topomatic.ToolBridge.dll"
 VERSION_PATTERN = re.compile(r"\d+\.\d+")
 ASSEMBLY_VERSION_PATTERNS = (
     re.compile(r'(\[assembly:\s*AssemblyVersion\(")[^"]+("\)\])'),
@@ -40,7 +41,7 @@ REQUIRED_ARCHIVE_FILES = frozenset(
     {
         "package.json",
         "plugins/tool_bridge.plugin",
-        "bin/Topomatic.ToolBridge.dll",
+        f"bin/{BRIDGE_ASSEMBLY_NAME}",
         f"bin/mcp_server/{SERVER_EXECUTABLE_NAME}",
     }
 )
@@ -58,6 +59,13 @@ RESET = "\033[0m"
 
 class BuildError(RuntimeError):
     """Ошибка, которую следует показать пользователю как ошибку сборки."""
+
+
+def required_archive_files(external_assemblies: tuple[str, ...]) -> frozenset[str]:
+    """Вернуть обязательные файлы TPM с учётом внешних зависимостей моста."""
+    return REQUIRED_ARCHIVE_FILES | frozenset(
+        f"bin/{assembly_name}" for assembly_name in external_assemblies
+    )
 
 
 @dataclass(frozen=True)
@@ -94,6 +102,57 @@ class ProjectFiles:
         if missing_files:
             formatted_paths = ", ".join(str(path) for path in missing_files)
             raise BuildError(f"Не найдены необходимые файлы: {formatted_paths}")
+
+    def get_copy_local_reference_assemblies(self) -> tuple[str, ...]:
+        """Получить из csproj имена внешних DLL, копируемых рядом с плагином.
+
+        В TPM добавляются только ссылки с ``HintPath`` без ``Private=False``.
+        Это соответствует семантике Copy Local в MSBuild и не включает DLL Robur,
+        которые предоставляет сама установленная платформа.
+        """
+        try:
+            project = ElementTree.parse(self.project_file)
+        except (OSError, ElementTree.ParseError) as error:
+            raise BuildError(f"Не удалось прочитать проект C#: {self.project_file}") from error
+
+        assemblies_by_name = {}
+        for reference in project.getroot().iter():
+            if reference.tag.rsplit("}", 1)[-1] != "Reference":
+                continue
+
+            hint_path = None
+            copy_local = True
+            for child in reference:
+                tag_name = child.tag.rsplit("}", 1)[-1]
+                if tag_name == "HintPath":
+                    hint_path = (child.text or "").strip()
+                elif tag_name == "Private" and (child.text or "").strip().casefold() == "false":
+                    copy_local = False
+
+            if not hint_path or not copy_local:
+                continue
+
+            assembly_name = Path(hint_path).name
+            if not assembly_name.lower().endswith(".dll"):
+                raise BuildError(
+                    "HintPath внешней ссылки должен указывать на DLL: "
+                    f"{hint_path} в {self.project_file}"
+                )
+            normalized_name = assembly_name.casefold()
+            if normalized_name == BRIDGE_ASSEMBLY_NAME.casefold():
+                raise BuildError(
+                    "Внешняя ссылка не может иметь имя основной сборки плагина: "
+                    f"{assembly_name}"
+                )
+            existing_name = assemblies_by_name.get(normalized_name)
+            if existing_name and existing_name != assembly_name:
+                raise BuildError(
+                    "Внешние ссылки содержат конфликтующие имена DLL: "
+                    f"{existing_name} и {assembly_name}"
+                )
+            assemblies_by_name[normalized_name] = assembly_name
+
+        return tuple(sorted(assemblies_by_name.values(), key=str.casefold))
 
 
 @dataclass(frozen=True)
@@ -167,31 +226,6 @@ def run_command(title: str, command: list[str], *, cwd: Path = ROOT) -> None:
         raise BuildError(f"Этап «{title}» завершился с кодом {error.returncode}.") from error
 
 
-def ensure_obfuscar_available() -> None:
-    """Проверить Obfuscar до очистки каталога и запуска TPM-сборки."""
-    command = ["dotnet", "tool", "run", "obfuscar.console", "--", "--version"]
-    print("[Проверка Obfuscar]")
-    print("+", subprocess.list2cmdline(command))
-    try:
-        subprocess.run(
-            command,
-            cwd=ROOT,
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-    except FileNotFoundError as error:
-        raise BuildError(
-            "Obfuscar недоступен: не найден dotnet. Установите .NET SDK и выполните "
-            "`dotnet tool restore`."
-        ) from error
-    except subprocess.CalledProcessError as error:
-        raise BuildError(
-            "Obfuscar не установлен или не запускается. Выполните `dotnet tool restore` "
-            "в корне репозитория."
-        ) from error
-
-
 def find_msbuild() -> list[str]:
     """Найти MSBuild, отдавая приоритет переменной MSBUILD_PATH."""
     configured_path = os.environ.get("MSBUILD_PATH")
@@ -229,7 +263,6 @@ def ensure_pyinstaller_available() -> None:
 
 def resolve_build_toolchain() -> BuildToolchain:
     """Проверить все внешние инструменты до изменения каталога результата."""
-    ensure_obfuscar_available()
     ensure_pyinstaller_available()
     return BuildToolchain(msbuild_command=tuple(find_msbuild()))
 
@@ -274,7 +307,7 @@ def temporary_assembly_version(files: ProjectFiles, package_version: str):
 
 def build_tool_bridge(
     files: ProjectFiles, package_version: str, toolchain: BuildToolchain
-) -> tuple[Path, str]:
+) -> Path:
     """Собрать C#-мост и вернуть каталог Release с DLL."""
     with temporary_assembly_version(files, package_version) as assembly_version:
         print(f"Версия DLL: {assembly_version}")
@@ -290,95 +323,14 @@ def build_tool_bridge(
             cwd=files.root,
         )
     output_dir = files.root / "tool_bridge" / "bin" / "Release"
-    assembly = output_dir / "Topomatic.ToolBridge.dll"
+    assembly = output_dir / BRIDGE_ASSEMBLY_NAME
     if not assembly.is_file():
         raise BuildError(f"Сборка C# завершилась, но не создала файл: {assembly}")
-    return output_dir, assembly_version
+    return output_dir
 
 
-def obfuscate_tool_bridge(
-    files: ProjectFiles, bridge_output: Path, paths: BuildPaths
-) -> Path:
-    """Обфусцировать DLL моста, сохранив её публичный API и подпись."""
-    assembly = bridge_output / "Topomatic.ToolBridge.dll"
-    key_file = files.root / "tool_bridge" / "Signature.snk"
-    if not assembly.is_file():
-        raise BuildError(f"Не найдена DLL для обфускации: {assembly}")
-    if not key_file.is_file():
-        raise BuildError(f"Не найден ключ для подписи обфусцированной DLL: {key_file}")
-
-    obfuscar_dir = paths.work_dir / "obfuscar"
-    obfuscated_output = obfuscar_dir / "output"
-    configuration_path = obfuscar_dir / "obfuscar.xml"
-    obfuscar_dir.mkdir(parents=True, exist_ok=True)
-
-    configuration = ElementTree.Element("Obfuscator")
-    for name, value in (
-        ("InPath", str(bridge_output.resolve())),
-        ("OutPath", str(obfuscated_output.resolve())),
-        ("KeyFile", str(key_file.resolve())),
-        # Сторонние плагины могут обращаться к публичным типам и членам DLL.
-        ("KeepPublicApi", "true"),
-        ("HidePrivateApi", "true"),
-        # Генератор скрытия строк Obfuscar ссылается на System.Private.CoreLib,
-        # недоступный хосту Robur на .NET Framework 4.8.
-        ("HideStrings", "false"),
-    ):
-        ElementTree.SubElement(configuration, "Var", name=name, value=value)
-    module = ElementTree.SubElement(configuration, "Module", file=str(assembly.resolve()))
-    # Json.NET сериализует анонимные типы через рефлексию. Сохраняем имена всех
-    # сущностей, которые компилятор пометил CompilerGeneratedAttribute.
-    ElementTree.SubElement(
-        module,
-        "SkipType",
-        name="*",
-        decorator="System.Runtime.CompilerServices.CompilerGeneratedAttribute",
-        skipMethods="true",
-        skipProperties="true",
-        skipFields="true",
-    )
-    ElementTree.SubElement(
-        configuration, "AssemblySearchPath", path=str(bridge_output.resolve())
-    )
-    ElementTree.SubElement(
-        configuration, "AssemblySearchPath", path=str((files.root / "Out" / "Bin").resolve())
-    )
-    ElementTree.ElementTree(configuration).write(
-        configuration_path, encoding="utf-8", xml_declaration=True
-    )
-
-    run_command(
-        "Обфускация C#-моста",
-        [
-            "dotnet",
-            "tool",
-            "run",
-            "obfuscar.console",
-            "--",
-            "--verbosity:normal",
-            str(configuration_path),
-        ],
-        cwd=files.root,
-    )
-
-    obfuscated_assembly = obfuscated_output / assembly.name
-    if not obfuscated_assembly.is_file():
-        raise BuildError(
-            "Obfuscar завершился без ошибки, но не создал обфусцированную DLL: "
-            f"{obfuscated_assembly}"
-        )
-
-    # Obfuscar создаёт только обработанную DLL. Зависимость Newtonsoft.Json
-    # необходима в итоговом TPM, поэтому переносим её в каталог для упаковки.
-    newtonsoft = bridge_output / "Newtonsoft.Json.dll"
-    if newtonsoft.is_file():
-        shutil.copy2(newtonsoft, obfuscated_output / newtonsoft.name)
-    return obfuscated_output
-
-
-def build_mcp_server(files: ProjectFiles, paths: BuildPaths) -> Path:
+def build_mcp_server(files: ProjectFiles, paths: BuildPaths) -> None:
     """Собрать MCP-сервер PyInstaller в папку bin/mcp_server."""
-    ensure_pyinstaller_available()
     pyinstaller_dir = paths.work_dir / "pyinstaller"
     staging_bin = paths.staging_dir / "bin"
     run_command(
@@ -412,7 +364,6 @@ def build_mcp_server(files: ProjectFiles, paths: BuildPaths) -> Path:
 
     destination = staging_bin / "mcp_server"
     generated_dir.replace(destination)
-    return destination
 
 
 def copy_file(source: Path, destination_dir: Path) -> None:
@@ -423,17 +374,19 @@ def copy_file(source: Path, destination_dir: Path) -> None:
     shutil.copy2(source, destination_dir / source.name)
 
 
-def stage_package_files(files: ProjectFiles, bridge_output: Path, paths: BuildPaths) -> None:
+def stage_package_files(
+    files: ProjectFiles,
+    bridge_output: Path,
+    paths: BuildPaths,
+    external_assemblies: tuple[str, ...],
+) -> None:
     """Разместить DLL, файл плагина и сервер в структуре будущего TPM-пакета."""
     bin_dir = paths.staging_dir / "bin"
     plugins_dir = paths.staging_dir / "plugins"
-    copy_file(bridge_output / "Topomatic.ToolBridge.dll", bin_dir)
+    copy_file(bridge_output / BRIDGE_ASSEMBLY_NAME, bin_dir)
     copy_file(files.plugin_file, plugins_dir)
-
-    # Newtonsoft.Json добавляется при наличии, чтобы пакет не зависел от DLL Robur.
-    newtonsoft = bridge_output / "Newtonsoft.Json.dll"
-    if newtonsoft.is_file():
-        copy_file(newtonsoft, bin_dir)
+    for assembly_name in external_assemblies:
+        copy_file(bridge_output / assembly_name, bin_dir)
 
 
 def write_package_manifest(paths: BuildPaths, args: argparse.Namespace) -> None:
@@ -451,7 +404,9 @@ def write_package_manifest(paths: BuildPaths, args: argparse.Namespace) -> None:
     )
 
 
-def create_and_verify_package(paths: BuildPaths) -> None:
+def create_and_verify_package(
+    paths: BuildPaths, external_assemblies: tuple[str, ...]
+) -> None:
     """Создать временный архив, проверить его и только затем заменить итоговый пакет."""
     paths.output_dir.mkdir(parents=True, exist_ok=True)
     paths.temporary_package_path.unlink(missing_ok=True)
@@ -477,7 +432,9 @@ def create_and_verify_package(paths: BuildPaths) -> None:
             bad_file = archive.testzip()
             if bad_file:
                 raise BuildError(f"Проверка архива не пройдена: повреждён файл {bad_file}")
-            missing_files = REQUIRED_ARCHIVE_FILES.difference(archive.namelist())
+            missing_files = required_archive_files(external_assemblies).difference(
+                archive.namelist()
+            )
             if missing_files:
                 raise BuildError(
                     "В созданном TPM-пакете отсутствуют файлы: "
@@ -575,21 +532,25 @@ def main() -> int:
 
     files = ProjectFiles.from_root(ROOT)
     files.validate()
+    external_assemblies = files.get_copy_local_reference_assemblies()
     paths = BuildPaths.create(args.output_dir.resolve(), args.name, args.version)
 
     print_build_status("=== Начало сборки TPM-пакета ===")
     print(f"Пакет: {args.name}, версия: {args.version}")
     print(f"Каталог результата: {paths.output_dir}")
+    print(
+        "Внешние DLL: "
+        + (", ".join(external_assemblies) if external_assemblies else "отсутствуют")
+    )
     toolchain = resolve_build_toolchain()
     prepare_output_directory(paths.output_dir)
 
     try:
-        bridge_output, _ = build_tool_bridge(files, args.version, toolchain)
-        bridge_output = obfuscate_tool_bridge(files, bridge_output, paths)
-        stage_package_files(files, bridge_output, paths)
+        bridge_output = build_tool_bridge(files, args.version, toolchain)
+        stage_package_files(files, bridge_output, paths, external_assemblies)
         build_mcp_server(files, paths)
         write_package_manifest(paths, args)
-        create_and_verify_package(paths)
+        create_and_verify_package(paths, external_assemblies)
     finally:
         if not args.keep_work_dir:
             shutil.rmtree(paths.work_dir, ignore_errors=True)
