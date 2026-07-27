@@ -62,11 +62,28 @@ python -m pip install -r scripts/requirements.txt
 python scripts/build_tpm.py
 ```
 
+### Параметры сборки
+
+| Параметр | По умолчанию | Описание |
+| --- | --- | --- |
+| `--name` | `robur-mcp` | Имя TPM-пакета. Допустимы английские буквы, цифры, `-` и `_`. |
+| `--version` | `0.1.0` | Общая версия DLL и TPM-пакета в формате `major.minor.patch`. Каждый компонент не должен превышать `65534`. |
+| `--caption` | `Robur MCP` | Отображаемое имя пакета. |
+| `--description` | `MCP server and tool bridge for Topomatic Robur` | Описание пакета. |
+| `--author` | `Topomatic` | Автор пакета. |
+| `--keep-work-dir` | — | Сохраняет временный каталог `.tpm-work` для диагностики. |
+
+Например:
+
+```bash
+python scripts/build_tpm.py --version 1.2.3 --caption "Robur MCP"
+```
+
 Готовый пакет создаётся в `build/`. Его содержимое очищается перед сборкой.
 
 ## Установка TPM-пакета
 
-Собранный TPM-пакет `robur_mcp.tpm` устанавливается при помощи утилиты `TopomaticPackageManager.exe`, поставляемой вместе с программными продуктами Topomatic Robur.
+Собранный TPM-пакет `robur-mcp.tpm` устанавливается при помощи утилиты `TopomaticPackageManager.exe`, поставляемой вместе с программными продуктами Topomatic Robur.
 
 ## Управление mcp-сервером
 
