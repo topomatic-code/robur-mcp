@@ -28,7 +28,7 @@ from xml.etree import ElementTree
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUTPUT_DIR = ROOT / "build"
 DEFAULT_PACKAGE_NAME = "robur-mcp"
-DEFAULT_VERSION = "0.1.0"
+DEFAULT_VERSION = "0.2.0"
 DEFAULT_AUTHOR = "Topomatic"
 SERVER_EXECUTABLE_NAME = "robur_mcp_server.exe"
 BRIDGE_ASSEMBLY_NAME = "Topomatic.ToolBridge.dll"

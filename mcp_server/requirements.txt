@@ -1,4 +1,5 @@
 pywin32
-mcp
+mcp==1.28.1
+jsonschema
 starlette
 uvicorn

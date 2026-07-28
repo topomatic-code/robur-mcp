@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.IO.Pipes;
@@ -162,21 +163,49 @@ namespace Topomatic.ToolBridge
                         var line = reader.ReadLine();
                         if (line == null)
                             return;
-                        BridgeResponse response;
+
+                        BridgeRequest request = null;
+                        BridgeResponse response = null;
                         try
                         {
-                            var request = JsonConvert.DeserializeObject<BridgeRequest>(line);
-                            response = ProcessRequest(request);
+                            request = JsonConvert.DeserializeObject<BridgeRequest>(line);
+                        }
+                        catch (JsonException ex)
+                        {
+                            m_Logger.Log("Bad request: invalid JSON. " + ex);
+                            response = BridgeResponse.Fail(
+                                null,
+                                "bad_request",
+                                "Request body contains invalid JSON.",
+                                null);
                         }
                         catch (Exception ex)
                         {
-                            response = BridgeResponse.Fail(
-                                null,
-                                "internal_error",
-                                ex.Message,
-                                ex.ToString());
+                            response = CreateInternalErrorResponse(null, ex);
                         }
-                        var json = JsonConvert.SerializeObject(response);
+
+                        if (response == null)
+                        {
+                            try
+                            {
+                                response = ProcessRequest(request);
+                            }
+                            catch (ToolBridgeException ex)
+                            {
+                                m_Logger.Log($"Expected error [{ex.Code}]: {ex}");
+                                response = BridgeResponse.Fail(
+                                    request?.Id,
+                                    ex.Code,
+                                    ex.Message,
+                                    GetSafeErrorDetails(ex));
+                            }
+                            catch (Exception ex)
+                            {
+                                response = CreateInternalErrorResponse(request?.Id, ex);
+                            }
+                        }
+
+                        var json = SerializeResponse(response, request?.Id);
                         writer.WriteLine(json);
                     }
                 }
@@ -188,6 +217,71 @@ namespace Topomatic.ToolBridge
             catch (IOException)
             {
                 // штатное разъединение клиента
+            }
+        }
+
+        private BridgeResponse CreateInternalErrorResponse(string requestId, Exception exception)
+        {
+            var traceId = Guid.NewGuid().ToString("N");
+            m_Logger.Log($"Internal error [{traceId}]: {exception}");
+            return BridgeResponse.Fail(
+                requestId,
+                "internal_error",
+                "Internal server error.",
+                new { trace_id = traceId });
+        }
+
+        private string SerializeResponse(BridgeResponse response, string requestId)
+        {
+            try
+            {
+                return JsonConvert.SerializeObject(response);
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(CreateInternalErrorResponse(requestId, ex));
+            }
+        }
+
+        private object GetSafeErrorDetails(ToolBridgeException exception)
+        {
+            if (exception.Details == null)
+                return null;
+            try
+            {
+                var serializer = JsonSerializer.CreateDefault();
+                serializer.Converters.Add(new ExceptionRejectingJsonConverter());
+                return JToken.FromObject(exception.Details, serializer);
+            }
+            catch (Exception detailsException)
+            {
+                m_Logger.Log($"Invalid error details omitted [{exception.Code}]: {detailsException}");
+                return null;
+            }
+        }
+
+        private sealed class ExceptionRejectingJsonConverter : JsonConverter
+        {
+            public override bool CanRead => false;
+
+            public override bool CanConvert(Type objectType)
+            {
+                return typeof(Exception).IsAssignableFrom(objectType);
+            }
+
+            public override object ReadJson(
+                JsonReader reader,
+                Type objectType,
+                object existingValue,
+                JsonSerializer serializer)
+            {
+                throw new NotSupportedException();
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                throw new JsonSerializationException(
+                    "Exception objects are not allowed in error details.");
             }
         }
 
@@ -212,16 +306,14 @@ namespace Topomatic.ToolBridge
                         tools = m_ToolManager.GetTools()
                     });
                 case "call_tool":
-                    string toolName;
+                    var toolName = "<missing>";
                     if (request.Params != null && request.Params.TryGetValue("tool_name", out var toolNameObj))
                         toolName = Convert.ToString(toolNameObj);
-                    else
-                        toolName = "unexpected tool name";
                     m_Logger.Log($"execute -> call_tool -> {toolName}");
                     return BridgeResponse.OK(request.Id, m_ToolManager.CallTool(request.Params));
                 default:
-                    m_Logger.Log("execute -> unexpected tool");
-                    return BridgeResponse.Fail(request.Id, "unknown_method", "Unknown method: " + request.Method, null);
+                    m_Logger.Log("execute -> unknown method");
+                    return BridgeResponse.Fail(request.Id, "bad_request", "Unknown method: " + request.Method, null);
             }
         }
     }

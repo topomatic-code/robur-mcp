@@ -38,50 +38,41 @@ namespace Topomatic.ToolBridge
         public object CallTool(Dictionary<string, object> parameters)
         {
             if (parameters == null)
-                throw new ArgumentException("params is required");
+                throw new BadRequestException("params is required");
+
             var toolName = JsonUtils.RequireString(parameters, "tool_name");
             var args = JsonUtils.GetObject(parameters, "arguments", new Dictionary<string, object>());
             var tool = m_Tools.FirstOrDefault(t => t.Definition.Name == toolName);
-            if (tool != null)
+            if (tool == null)
+                throw new ToolNotFoundException(toolName);
+
+            var func = tool.Func;
+            if (func == null)
+                throw new InvalidOperationException("Tool function is null: " + toolName);
+
+            var cadView = m_CadViewProvider();
+            if (cadView == null)
             {
-                var func = tool.Func;
-                if (func != null)
-                {
-                    var cadView = m_CadViewProvider.Invoke();
-                    if (cadView != null)
-                    {
-                        object result = null;
-                        cadView.Invoke((Action)(() =>
-                        {
-                            var provider = tool.Provider;
-                            if (provider != null)
-                            {
-                                provider.AppHost = ApplicationHost.Current;
-                                provider.CadView = cadView;
-                                provider.SessionStorage = m_SessionStorage;
-                                provider.Logger = m_Logger;
-                            }
-                            result = func.Invoke(args);
-                        }));
-                        return result;
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException(
-                            "Не удалось получить активный видовой экран. " +
-                            "Активируйте необходимую модель в структуре проекта и перейдите на требуемый видовой экран."
-                        );
-                    }
-                }
-                else
-                {
-                    throw new InvalidOperationException("Tool function is null: " + toolName);
-                }
+                throw new PreconditionFailedException(
+                    "Не удалось получить активный видовой экран. " +
+                    "Активируйте необходимую модель в структуре проекта и перейдите на требуемый видовой экран."
+                );
             }
-            else
+
+            object result = null;
+            cadView.Invoke((Action)(() =>
             {
-                throw new InvalidOperationException("Unknown tool: " + toolName);
-            }
+                var provider = tool.Provider;
+                if (provider != null)
+                {
+                    provider.AppHost = ApplicationHost.Current;
+                    provider.CadView = cadView;
+                    provider.SessionStorage = m_SessionStorage;
+                    provider.Logger = m_Logger;
+                }
+                result = func(args);
+            }));
+            return result;
         }
     }
 }

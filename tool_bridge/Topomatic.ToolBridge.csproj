@@ -133,6 +133,7 @@
     <Compile Include="ToolBridgeBootstrap.cs" />
     <Compile Include="ToolBridgeLogger.cs" />
     <Compile Include="ToolBridgeModule.cs" />
+    <Compile Include="ToolBridgeException.cs" />
     <Compile Include="ToolBridgePipeServer.cs" />
     <Compile Include="ToolBridgePluginHost.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
