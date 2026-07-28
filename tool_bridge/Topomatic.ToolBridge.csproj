@@ -121,6 +121,7 @@
     <Compile Include="BridgeRequest.cs" />
     <Compile Include="BridgeResponse.cs" />
     <Compile Include="DwgUtils.cs" />
+    <Compile Include="ErrorCodes.cs" />
     <Compile Include="JsonUtils.cs" />
     <Compile Include="Services\Models\ProjectNode.cs" />
     <Compile Include="Services\ObjectStorage.cs" />

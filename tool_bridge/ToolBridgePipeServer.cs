@@ -175,7 +175,7 @@ namespace Topomatic.ToolBridge
                             m_Logger.Log("Bad request: invalid JSON. " + ex);
                             response = BridgeResponse.Fail(
                                 null,
-                                "bad_request",
+                                ErrorCodes.BadRequest,
                                 "Request body contains invalid JSON.",
                                 null);
                         }
@@ -226,7 +226,7 @@ namespace Topomatic.ToolBridge
             m_Logger.Log($"Internal error [{traceId}]: {exception}");
             return BridgeResponse.Fail(
                 requestId,
-                "internal_error",
+                ErrorCodes.InternalError,
                 "Internal server error.",
                 new { trace_id = traceId });
         }
@@ -288,7 +288,7 @@ namespace Topomatic.ToolBridge
         private BridgeResponse ProcessRequest(BridgeRequest request)
         {
             if (request == null)
-                return BridgeResponse.Fail(null, "bad_request", "Request body is empty or invalid JSON.", null);
+                return BridgeResponse.Fail(null, ErrorCodes.BadRequest, "Request body is empty or invalid JSON.", null);
             switch ((request.Method ?? string.Empty).Trim())
             {
                 case "ping":
@@ -313,7 +313,7 @@ namespace Topomatic.ToolBridge
                     return BridgeResponse.OK(request.Id, m_ToolManager.CallTool(request.Params));
                 default:
                     m_Logger.Log("execute -> unknown method");
-                    return BridgeResponse.Fail(request.Id, "bad_request", "Unknown method: " + request.Method, null);
+                    return BridgeResponse.Fail(request.Id, ErrorCodes.BadRequest, "Unknown method: " + request.Method, null);
             }
         }
     }

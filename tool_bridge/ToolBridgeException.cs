@@ -9,7 +9,7 @@ namespace Topomatic.ToolBridge
     /// <remarks>
     /// В прикладном коде следует выбрасывать один из специализированных наследников этого класса.
     /// Неизвестные исключения не нужно оборачивать в <see cref="ToolBridgeException"/>:
-    /// pipe-сервер зарегистрирует их в журнале и вернёт как <c>internal_error</c>.
+    /// pipe-сервер зарегистрирует их в журнале и вернёт с кодом <see cref="ErrorCodes.InternalError"/>.
     /// Значение <see cref="Details"/> должно быть безопасным для передачи клиенту и сериализации в JSON.
     /// Не помещайте в него исключения, трассировку стека, внутренние пути или чувствительные данные.
     /// </remarks>
@@ -60,7 +60,7 @@ namespace Topomatic.ToolBridge
     public sealed class BadRequestException : ToolBridgeException
     {
         /// <summary>
-        /// Создаёт ошибку с кодом <c>bad_request</c>.
+        /// Создаёт ошибку с кодом <see cref="ErrorCodes.BadRequest"/>.
         /// </summary>
         /// <param name="message">Описание неверного параметра или структуры запроса.</param>
         /// <param name="details">Необязательные безопасные данные, например имя параметра.</param>
@@ -69,7 +69,7 @@ namespace Topomatic.ToolBridge
             string message,
             object details = null,
             Exception innerException = null)
-            : base("bad_request", message, details, innerException)
+            : base(ErrorCodes.BadRequest, message, details, innerException)
         {
         }
     }
@@ -85,12 +85,12 @@ namespace Topomatic.ToolBridge
     public sealed class ToolNotFoundException : ToolBridgeException
     {
         /// <summary>
-        /// Создаёт ошибку с кодом <c>tool_not_found</c>.
+        /// Создаёт ошибку с кодом <see cref="ErrorCodes.ToolNotFound"/>.
         /// </summary>
         /// <param name="toolName">Имя инструмента, который не удалось найти.</param>
         public ToolNotFoundException(string toolName)
             : base(
-                "tool_not_found",
+                ErrorCodes.ToolNotFound,
                 $"Tool not found: {toolName}",
                 new { tool_name = toolName })
         {
@@ -109,7 +109,7 @@ namespace Topomatic.ToolBridge
     public sealed class ToolExecutionFailedException : ToolBridgeException
     {
         /// <summary>
-        /// Создаёт ошибку с кодом <c>tool_execution_failed</c>.
+        /// Создаёт ошибку с кодом <see cref="ErrorCodes.ToolExecutionFailed"/>.
         /// </summary>
         /// <param name="message">Безопасное описание причины отказа операции.</param>
         /// <param name="details">Необязательные безопасные сведения об операции.</param>
@@ -118,7 +118,7 @@ namespace Topomatic.ToolBridge
             string message,
             object details = null,
             Exception innerException = null)
-            : base("tool_execution_failed", message, details, innerException)
+            : base(ErrorCodes.ToolExecutionFailed, message, details, innerException)
         {
         }
     }
@@ -134,7 +134,7 @@ namespace Topomatic.ToolBridge
     public sealed class PreconditionFailedException : ToolBridgeException
     {
         /// <summary>
-        /// Создаёт ошибку с кодом <c>precondition_failed</c>.
+        /// Создаёт ошибку с кодом <see cref="ErrorCodes.PreconditionFailed"/>.
         /// </summary>
         /// <param name="message">Описание условия, которое необходимо выполнить.</param>
         /// <param name="details">Необязательные безопасные сведения о требуемом состоянии.</param>
@@ -143,7 +143,7 @@ namespace Topomatic.ToolBridge
             string message,
             object details = null,
             Exception innerException = null)
-            : base("precondition_failed", message, details, innerException)
+            : base(ErrorCodes.PreconditionFailed, message, details, innerException)
         {
         }
     }
