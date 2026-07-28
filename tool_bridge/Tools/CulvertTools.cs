@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.Culverts;
@@ -29,12 +28,7 @@ namespace Topomatic.ToolBridge.Tools
         public object GetParameters(Dictionary<string, object> args)
         {
             var uriStr = JsonUtils.RequireString(args, "uri");
-            var uri = new URI(uriStr);
-            var culvertNode = ProjectManager.Instance.GetNode(uri) ??
-                throw new InvalidOperationException($"Не удалось найти водопропускную трубу в структуре проекта по указанному uri {uriStr}. Проверьте правильность переданного uri.");
-            var culvertModel = culvertNode.Model ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
-            var culvertContainer = PluginCoreOps.LockReadContainer<ICulvertContainer>(culvertModel) ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
-            var culvert = culvertContainer.Culvert ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
+            var (culvertName, culvert) = GetCulvert(uriStr);
             var sheetContext = culvert.SheetContext;
             var variables = new Dictionary<string, List<VariableInfo>>();
             var tables = new List<string>();
@@ -67,7 +61,7 @@ namespace Topomatic.ToolBridge.Tools
             {
                 result = new
                 {
-                    culvertName = culvertNode.Name,
+                    culvertName,
                     parameterGroups = parameterGroups.ToArray()
                 },
                 description = "Параметры водопропускной трубы.",
@@ -91,12 +85,7 @@ namespace Topomatic.ToolBridge.Tools
         public object GetVolumes(Dictionary<string, object> args)
         {
             var uriStr = JsonUtils.RequireString(args, "uri");
-            var uri = new URI(uriStr);
-            var culvertNode = ProjectManager.Instance.GetNode(uri) ??
-                throw new InvalidOperationException($"Не удалось найти водопропускную трубу в структуре проекта по указанному uri {uriStr}. Проверьте правильность переданного uri.");
-            var culvertModel = culvertNode.Model ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
-            var culvertContainer = PluginCoreOps.LockReadContainer<ICulvertContainer>(culvertModel) ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
-            var culvert = culvertContainer.Culvert ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
+            var (culvertName, culvert) = GetCulvert(uriStr);
             var sheetContext = culvert.SheetContext;
             var tableObjects = new List<object>();
             if (sheetContext.UseVolumesTable)
@@ -110,7 +99,7 @@ namespace Topomatic.ToolBridge.Tools
             {
                 result = new
                 {
-                    culvertName = culvertNode.Name,
+                    culvertName,
                     volumeTables = tableObjects.ToArray()
                 },
                 description = "Объемы работ по водопропускной трубе.",
@@ -134,12 +123,7 @@ namespace Topomatic.ToolBridge.Tools
         public object GetSpecification(Dictionary<string, object> args)
         {
             var uriStr = JsonUtils.RequireString(args, "uri");
-            var uri = new URI(uriStr);
-            var culvertNode = ProjectManager.Instance.GetNode(uri) ??
-                throw new InvalidOperationException($"Не удалось найти водопропускную трубу в структуре проекта по указанному uri {uriStr}. Проверьте правильность переданного uri.");
-            var culvertModel = culvertNode.Model ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
-            var culvertContainer = PluginCoreOps.LockReadContainer<ICulvertContainer>(culvertModel) ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
-            var culvert = culvertContainer.Culvert ?? throw new InvalidOperationException("Не удалось получить модель водопропускной трубы");
+            var (culvertName, culvert) = GetCulvert(uriStr);
             var sheetContext = culvert.SheetContext;
             var tableObjects = new List<object>();
             if (sheetContext.UseCustomSpecs)
@@ -172,12 +156,29 @@ namespace Topomatic.ToolBridge.Tools
             {
                 result = new
                 {
-                    culvertName = culvertNode.Name,
+                    culvertName,
                     specificationTables = tableObjects.ToArray()
                 },
                 description = "Спецификация по водопропускной трубе.",
                 status = "Данные успешно получены."
             };
+        }
+
+        private static (string name, Culvert culvert) GetCulvert(string uriValue)
+        {
+            if (string.IsNullOrWhiteSpace(uriValue))
+                throw new BadRequestException("URI водопропускной трубы не может быть пустым.");
+
+            var uri = new URI(uriValue);
+            var culvertNode = ProjectManager.Instance.GetNode(uri) ??
+                throw new PreconditionFailedException($"Не удалось найти водопропускную трубу в структуре проекта по указанному uri {uriValue}.");
+            var culvertModel = culvertNode.Model ??
+                throw new PreconditionFailedException("Модель водопропускной трубы недоступна.");
+            var culvertContainer = PluginCoreOps.LockReadContainer<ICulvertContainer>(culvertModel) ??
+                throw new PreconditionFailedException("Элемент проекта не является водопропускной трубой или его модель недоступна.");
+            var culvert = culvertContainer.Culvert ??
+                throw new PreconditionFailedException("Данные водопропускной трубы недоступны.");
+            return (culvertNode.Name, culvert);
         }
 
         private static object CreateTableObj(string tableName, List<RowData> dataset)

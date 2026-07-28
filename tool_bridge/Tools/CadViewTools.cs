@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Topomatic.Cad.Foundation;
 using Topomatic.Cad.View;
@@ -26,25 +25,21 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetPoint(Dictionary<string, object> args)
         {
-            var cadView = CadView ?? throw new InvalidOperationException("Не удалось найти активный видовой экран.");
+            var cadView = DwgUtils.RequireCadView(CadView);
             var message = JsonUtils.RequireString(args, "message");
-            if (CadCursors.GetPoint(cadView, out var point, message))
+            if (!CadCursors.GetPoint(cadView, out var point, message))
+                throw new ToolExecutionFailedException("Пользователь отменил ввод точки.");
+
+            return new
             {
-                return new
+                result = new
                 {
-                    result = new
-                    {
-                        x = point.X,
-                        y = point.Y
-                    },
-                    description = "Точка на текущем видовом экране.",
-                    status = "Точка успешно получена."
-                };
-            }
-            else
-            {
-                throw new InvalidOperationException("Пользователь отменил ввод точки.");
-            }
+                    x = point.X,
+                    y = point.Y
+                },
+                description = "Точка на текущем видовом экране.",
+                status = "Точка успешно получена."
+            };
         }
 
         [ToolDef(
@@ -67,7 +62,7 @@ namespace Topomatic.ToolBridge.Tools
             const string CLOSE_CONTOUR = "Замкнуть контур";
             const string END_INPUT = "Завершить ввод";
 
-            var cadView = CadView ?? throw new InvalidOperationException("Не удалось найти активный видовой экран.");
+            var cadView = DwgUtils.RequireCadView(CadView);
             var message = JsonUtils.RequireString(args, "message");
             var positions = new List<Vector2D>();
 
@@ -112,14 +107,14 @@ namespace Topomatic.ToolBridge.Tools
                             }
                             else
                             {
-                                throw new InvalidOperationException("Не удалось запросить контур.");
+                                throw new ToolExecutionFailedException("Не удалось запросить контур.");
                             }
                             break;
                         default:
                             if (positions.Count > 0)
                                 positions.RemoveAt(positions.Count - 1);
                             else
-                                throw new InvalidOperationException("Пользователь отменил ввод контура.");
+                                throw new ToolExecutionFailedException("Пользователь отменил ввод контура.");
                             break;
                     }
                     if (exit)
@@ -178,7 +173,7 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Zoom(Dictionary<string, object> args)
         {
-            var cadView = CadView ?? throw new InvalidOperationException("Не удалось найти активный видовой экран.");
+            var cadView = DwgUtils.RequireCadView(CadView);
             var minObj = JsonUtils.RequireObject(args, "min");
             var min = new Vector2D(
                 JsonUtils.RequireDouble(minObj, "x"),

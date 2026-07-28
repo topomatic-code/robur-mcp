@@ -32,24 +32,23 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateBlock(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var entities = JsonUtils.RequireStringArray(args, "entities");
             if (string.IsNullOrWhiteSpace(name))
-                throw new InvalidOperationException("Имя блока не может быть пустым.");
+                throw new BadRequestException("Имя блока не может быть пустым.");
             if (entities.Length == 0)
-                throw new InvalidOperationException("Необходимо передать хотя бы один guid элемента чертежа.");
+                throw new BadRequestException("Необходимо передать хотя бы один guid элемента чертежа.");
             if (drawing.Blocks.IsExists(name))
-                throw new InvalidOperationException($"Блок с именем {name} уже содержится в таблице блоков чертежа.");
+                throw new PreconditionFailedException($"Блок с именем {name} уже содержится в таблице блоков чертежа.");
             var sourceEntities = new List<DwgEntity>(entities.Length);
             foreach (var entityGuidStr in entities)
             {
-                if (!Guid.TryParse(entityGuidStr, out var entityGuid))
-                    throw new InvalidOperationException($"Некорректный guid элемента чертежа \"{entityGuidStr}\".");
-                var (entity, currentName) = DwgUtils.FindEntity<DwgEntity>(drawing, sessionStorage, entityGuid);
+                var entityGuid = DwgUtils.ParseGuid(entityGuidStr);
+                var (entity, _) = DwgUtils.FindEntity<DwgEntity>(drawing, sessionStorage, entityGuid);
                 if (entity == null)
-                    throw new InvalidOperationException($"Не удалось найти элемент по указанному guid \"{entityGuidStr}\".");
+                    throw new PreconditionFailedException($"Не удалось найти элемент по указанному guid \"{entityGuidStr}\".");
                 sourceEntities.Add(entity);
             }
             var logger = Logger;
@@ -59,7 +58,7 @@ namespace Topomatic.ToolBridge.Tools
                 drawing.BeginUpdate();
             try
             {
-                var block = drawing.Blocks.Add(name) ?? throw new InvalidOperationException("Не удалось создать блок.");
+                var block = drawing.Blocks.Add(name) ?? throw new ToolExecutionFailedException("Не удалось создать блок.");
                 var refContext = new ReferencesContext(drawing);
                 block.Entities.CopyFrom(sourceEntities, e => e.Layer = null, refContext);
                 return new
@@ -118,8 +117,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object InsertBlock(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var blockName = JsonUtils.RequireString(args, "blockName");
             var position = JsonUtils.RequireObject(args, "position");
@@ -131,11 +130,11 @@ namespace Topomatic.ToolBridge.Tools
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             if (string.IsNullOrWhiteSpace(name))
-                throw new InvalidOperationException("Название вставки блока не может быть пустым.");
+                throw new BadRequestException("Название вставки блока не может быть пустым.");
             if (string.IsNullOrWhiteSpace(blockName))
-                throw new InvalidOperationException("Имя блока не может быть пустым.");
+                throw new BadRequestException("Имя блока не может быть пустым.");
             if (!drawing.Blocks.IsExists(blockName))
-                throw new InvalidOperationException($"Блок с именем {blockName} не содержится в таблице блоков чертежа.");
+                throw new PreconditionFailedException($"Блок с именем {blockName} не содержится в таблице блоков чертежа.");
             var block = drawing.Blocks[blockName] ?? throw new InvalidOperationException($"Не удалось получить блок с именем {blockName}.");
             var scaleVector = new Vector3D(1, 1, 1);
             if (scale != null)
@@ -144,7 +143,7 @@ namespace Topomatic.ToolBridge.Tools
                 var scaleY = JsonUtils.RequireDouble(scale, "y");
                 var scaleZ = JsonUtils.RequireDouble(scale, "z");
                 if (scaleX == 0 || scaleY == 0 || scaleZ == 0)
-                    throw new InvalidOperationException("Масштаб вставки блока не может быть равен 0.");
+                    throw new BadRequestException("Масштаб вставки блока не может быть равен 0.");
                 scaleVector = new Vector3D(scaleX, scaleY, scaleZ);
             }
             var guid = Guid.NewGuid();
@@ -202,15 +201,14 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object ExplodeBlock(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            if (!Guid.TryParse(guidStr, out var guid))
-                throw new InvalidOperationException($"Некорректный guid вставки блока \"{guidStr}\".");
+            var guid = DwgUtils.ParseGuid(guidStr);
             var (insert, currentName) = DwgUtils.FindEntity<DwgInsert>(drawing, sessionStorage, guid);
             if (insert == null)
-                throw new InvalidOperationException($"Не удалось найти вставку блока по указанному guid \"{guidStr}\".");
-            var block = insert.Block ?? throw new InvalidOperationException($"Вставка блока с guid \"{guidStr}\" не ссылается на блок.");
+                throw new PreconditionFailedException($"Не удалось найти вставку блока по указанному guid \"{guidStr}\".");
+            var block = insert.Block ?? throw new PreconditionFailedException($"Вставка блока с guid \"{guidStr}\" не ссылается на блок.");
             var removedInsertInfo = DwgUtils.CreateEntityInfoObj(insert, guidStr, currentName ?? "none");
             var logger = Logger;
             if (logger != null)
@@ -231,18 +229,16 @@ namespace Topomatic.ToolBridge.Tools
                         entity.ScaleEntity(origin, insert.XScaleFactor, insert.YScaleFactor);
                         entity.Rotate(origin, insert.Rotation);
                         entity.Move(insert.Position.X, insert.Position.Y, insert.Position.Z);
-                        // Возможно лучше использовать Transform?
-                        //entity.Transform(insert.Matrix);
                     }
-                    catch
+                    catch (Exception)
                     {
-                        // При преобразовании сущностей чертежа возможны исключения.
+                        // Некоторые типы сущностей не поддерживают преобразования вставки блока.
                         drawing.ActiveSpace.Entities.Remove(entity);
                         copiedEntities.RemoveAt(i);
                     }
                 }
                 if (!drawing.ActiveSpace.Entities.Remove(insert))
-                    throw new InvalidOperationException($"Не удалось удалить вставку блока с guid \"{guidStr}\".");
+                    throw new ToolExecutionFailedException($"Не удалось удалить вставку блока с guid \"{guidStr}\".");
                 sessionStorage.RemoveObject(guid);
                 var insertedEntitiesInfo = copiedEntities.Select(entity =>
                 {
@@ -292,12 +288,12 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveBlock(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
-                throw new InvalidOperationException("Имя блока не может быть пустым.");
+                throw new BadRequestException("Имя блока не может быть пустым.");
             if (!drawing.Blocks.IsExists(name))
-                throw new InvalidOperationException($"Блок с именем {name} не содержится в таблице блоков чертежа.");
+                throw new PreconditionFailedException($"Блок с именем {name} не содержится в таблице блоков чертежа.");
             var block = drawing.Blocks[name] ?? throw new InvalidOperationException($"Не удалось получить блок с именем {name}.");
             var result = CreateBlockObj(block);
             var logger = Logger;
@@ -308,7 +304,7 @@ namespace Topomatic.ToolBridge.Tools
             try
             {
                 if (!drawing.Blocks.Remove(name))
-                    throw new InvalidOperationException($"Не удалось удалить блок с именем {name}.");
+                    throw new ToolExecutionFailedException($"Не удалось удалить блок с именем {name}.");
                 return new
                 {
                     result,
@@ -336,7 +332,7 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetBlocks(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var blocks = drawing.Blocks.Select(CreateBlockObj).ToArray();
             return new
             {

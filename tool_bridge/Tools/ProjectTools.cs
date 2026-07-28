@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Topomatic.FoundationClasses;
 using Topomatic.ToolBridge.Services;
@@ -22,7 +21,8 @@ namespace Topomatic.ToolBridge.Tools
         public object GetActiveProject(Dictionary<string, object> args)
         {
             var projectManager = ProjectManager.Instance;
-            var projectRoot = projectManager.GetProjectTree();
+            var projectRoot = projectManager.GetProjectTree() ??
+                throw new PreconditionFailedException("Не удалось получить активный проект.");
             return new
             {
                 result = new
@@ -66,9 +66,14 @@ namespace Topomatic.ToolBridge.Tools
         public object DeleteProjectItem(Dictionary<string, object> args)
         {
             var uriStr = JsonUtils.RequireString(args, "uri");
+            if (string.IsNullOrWhiteSpace(uriStr))
+                throw new BadRequestException("URI элемента проекта не может быть пустым.");
             var uri = new URI(uriStr);
-            var deletedNode = ProjectManager.Instance.RemoveNode(uri) ??
-                throw new InvalidOperationException($"Не удалось найти элемент проекта по указанному uri {uriStr}. Проверьте правильность переданного uri.");
+            var projectManager = ProjectManager.Instance;
+            if (projectManager.GetNode(uri) == null)
+                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
+            var deletedNode = projectManager.RemoveNode(uri) ??
+                throw new ToolExecutionFailedException("Не удалось удалить элемент проекта.");
             return new
             {
                 result = new
@@ -104,9 +109,16 @@ namespace Topomatic.ToolBridge.Tools
         public object CreateFolder(Dictionary<string, object> args)
         {
             var parentUriStr = JsonUtils.RequireString(args, "parentUri");
+            if (string.IsNullOrWhiteSpace(parentUriStr))
+                throw new BadRequestException("URI родительского элемента не может быть пустым.");
             var parentUri = new URI(parentUriStr);
             var folderName = JsonUtils.RequireString(args, "folderName");
-            var folderNode = ProjectManager.Instance.CreateFolder(parentUri, folderName) ?? throw new InvalidOperationException("Не удалось создать папку.");
+            if (string.IsNullOrWhiteSpace(folderName))
+                throw new BadRequestException("Название папки не может быть пустым.");
+            if (ProjectManager.Instance.GetNode(parentUri) == null)
+                throw new PreconditionFailedException($"Не удалось найти родительский элемент проекта по указанному uri {parentUriStr}.");
+            var folderNode = ProjectManager.Instance.CreateFolder(parentUri, folderName) ??
+                throw new ToolExecutionFailedException("Не удалось создать папку.");
             return new
             {
                 result = new

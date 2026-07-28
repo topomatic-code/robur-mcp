@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Topomatic.Cad.Foundation;
 using Topomatic.Visualization;
@@ -70,8 +71,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateTlcModel(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var scriptPath = JsonUtils.RequireString(args, "scriptPath");
             var position = JsonUtils.RequireVector3D(args, "position");
@@ -79,7 +80,7 @@ namespace Topomatic.ToolBridge.Tools
             var normal = JsonUtils.GetVector3D(args, "normal", Vector3D.UnitZ).Value;
             var angle = JsonUtils.GetDouble(args, "angle", 0.0).Value;
             if (normal.Length <= 1e-9)
-                throw new InvalidOperationException("Нормаль Tlc-модели не может быть нулевой.");
+                throw new BadRequestException("Нормаль Tlc-модели не может быть нулевой.");
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
@@ -87,15 +88,12 @@ namespace Topomatic.ToolBridge.Tools
             var guidStr = guid.ToString();
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Вставка tlc-модели \"{name}\""));
+                drawing.BeginUpdate(logger.CreateLogString($"Вставка Tlc-модели \"{name}\""));
             else
                 drawing.BeginUpdate();
             try
             {
-                var doc = new ConstructionDocument();
-                doc.LoadFromFile(scriptPath);
-                var tlcModel = doc.CreateModel() as ConstructedModel3dElement ??
-                    throw new InvalidOperationException("Скрипт не создал Tlc-модель ожидаемого типа.");
+                var tlcModel = LoadTlcModel(scriptPath);
                 try
                 {
                     tlcModel.BeginUpdate();
@@ -105,12 +103,7 @@ namespace Topomatic.ToolBridge.Tools
                 }
                 catch (Exception ex)
                 {
-                    return new
-                    {
-                        result = ex.Message,
-                        description = "Текст ошибки.",
-                        status = "Возникла ошибка при выполнении скрипта."
-                    };
+                    return CreateTlcDiagnosticResponse(ex);
                 }
                 var tlcEntity = new DwgModel3DElement()
                 {
@@ -205,10 +198,10 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateTlcModel(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
             var scriptPath = JsonUtils.GetString(args, "scriptPath", null);
             var position = JsonUtils.GetVector3D(args, "position", null);
@@ -219,12 +212,9 @@ namespace Topomatic.ToolBridge.Tools
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             if (normal != null && normal.Value.Length <= 1e-9)
-                throw new InvalidOperationException("Нормаль Tlc-модели не может быть нулевой.");
+                throw new BadRequestException("Нормаль Tlc-модели не может быть нулевой.");
             var (tlcEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
-            if (tlcEntity == null)
-                throw new InvalidOperationException($"Не удалось найти Tlc-модель по указанному guid \"{guidStr}\".");
-            var tlcModel = tlcEntity.Element as ConstructedModel3dElement ??
-                throw new InvalidOperationException($"Не удалось найти Tlc-модель по указанному guid \"{guidStr}\".");
+            var tlcModel = DwgUtils.RequireTlcElement(tlcEntity, guidStr);
             var logger = Logger;
             if (logger != null)
                 drawing.BeginUpdate(logger.CreateLogString($"Обновление Tlc-модели \"{name ?? currentName ?? "none"}\""));
@@ -254,11 +244,8 @@ namespace Topomatic.ToolBridge.Tools
                     {
                         if (scriptPath != null)
                         {
-                            var doc = new ConstructionDocument();
-                            doc.LoadFromFile(scriptPath);
                             var curProps = tlcModel.GetAllProperties();
-                            tlcModel = doc.CreateModel() as ConstructedModel3dElement ??
-                                throw new InvalidOperationException("Скрипт не создал Tlc-модель ожидаемого типа.");
+                            tlcModel = LoadTlcModel(scriptPath);
                             tlcModel.BeginUpdate();
                             tlcModel.EndUpdate();
                             tlcModel.BeginUpdate();
@@ -283,12 +270,7 @@ namespace Topomatic.ToolBridge.Tools
                 }
                 catch (Exception ex)
                 {
-                    return new
-                    {
-                        result = ex.Message,
-                        description = "Текст ошибки.",
-                        status = "Возникла ошибка при обновлении Tlc-модели."
-                    };
+                    return CreateTlcDiagnosticResponse(ex);
                 }
                 return new
                 {
@@ -326,10 +308,7 @@ namespace Topomatic.ToolBridge.Tools
         public object ExecuteTlcScript(Dictionary<string, object> args)
         {
             var scriptPath = JsonUtils.RequireString(args, "scriptPath");
-            var doc = new ConstructionDocument();
-            doc.LoadFromFile(scriptPath);
-            var tlcModel = doc.CreateModel() as ConstructedModel3dElement ??
-                throw new InvalidOperationException("Скрипт не создал Tlc-модель ожидаемого типа.");
+            var tlcModel = LoadTlcModel(scriptPath);
             var meshBounds = BoundingBox3D.Empty;
             try
             {
@@ -353,12 +332,7 @@ namespace Topomatic.ToolBridge.Tools
             }
             catch (Exception ex)
             {
-                return new
-                {
-                    result = ex.Message,
-                    description = "Текст ошибки.",
-                    status = "Возникла ошибка при выполнении скрипта."
-                };
+                return CreateTlcDiagnosticResponse(ex);
             }
         }
 
@@ -379,17 +353,14 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetTlcModelScript(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var (tlcEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
-            if (tlcEntity == null)
-                throw new InvalidOperationException($"Не удалось найти Tlc-модель по указанному guid \"{guidStr}\".");
-            var tlcModel = tlcEntity.Element as ConstructedModel3dElement ??
-                throw new InvalidOperationException($"Не удалось найти Tlc-модель по указанному guid \"{guidStr}\".");
+            var tlcModel = DwgUtils.RequireTlcElement(tlcEntity, guidStr);
             var document = tlcModel.Document ??
-                throw new InvalidOperationException($"У Tlc-модели с guid \"{guidStr}\" отсутствует документ со скриптом.");
+                throw new PreconditionFailedException($"У Tlc-модели с guid \"{guidStr}\" отсутствует документ со скриптом.");
             return new
             {
                 result = new
@@ -433,10 +404,7 @@ namespace Topomatic.ToolBridge.Tools
             if (string.Equals(source, "Script", StringComparison.OrdinalIgnoreCase))
             {
                 var scriptPath = JsonUtils.RequireString(args, "scriptPath");
-                var doc = new ConstructionDocument();
-                doc.LoadFromFile(scriptPath);
-                var tlcModel = doc.CreateModel() as ConstructedModel3dElement ??
-                    throw new InvalidOperationException("Скрипт не создал Tlc-модель ожидаемого типа.");
+                var tlcModel = LoadTlcModel(scriptPath);
                 try
                 {
                     tlcModel.BeginUpdate();
@@ -445,30 +413,22 @@ namespace Topomatic.ToolBridge.Tools
                 }
                 catch (Exception ex)
                 {
-                    return new
-                    {
-                        result = ex.Message,
-                        description = "Текст ошибки.",
-                        status = "Возникла ошибка при выполнении скрипта."
-                    };
+                    return CreateTlcDiagnosticResponse(ex);
                 }
             }
             else if (string.Equals(source, "Model", StringComparison.OrdinalIgnoreCase))
             {
-                var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-                var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+                var drawing = DwgUtils.RequireDrawing(CadView);
+                var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
                 var guidStr = JsonUtils.RequireString(args, "guid");
-                var guid = Guid.Parse(guidStr);
-                var (tlcEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
-                if (tlcEntity == null)
-                    throw new InvalidOperationException($"Не удалось найти Tlc-модель по указанному guid \"{guidStr}\".");
-                var tlcModel = tlcEntity.Element as ConstructedModel3dElement ??
-                    throw new InvalidOperationException($"Не удалось найти Tlc-модель по указанному guid \"{guidStr}\".");
+                var guid = DwgUtils.ParseGuid(guidStr);
+                var (tlcEntity, _) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
+                var tlcModel = DwgUtils.RequireTlcElement(tlcEntity, guidStr);
                 properties = tlcModel.GetAllProperties();
             }
             else
             {
-                throw new InvalidOperationException("Неизвестное значение source. Допустимые значения: Script, Model.");
+                throw new BadRequestException("Неизвестное значение source. Допустимые значения: Script, Model.");
             }
             return new
             {
@@ -483,7 +443,20 @@ namespace Topomatic.ToolBridge.Tools
             };
         }
 
-        private object GeneratePropertySchema(ImProperties properties)
+        private static ConstructedModel3dElement LoadTlcModel(string scriptPath)
+        {
+            if (string.IsNullOrWhiteSpace(scriptPath))
+                throw new BadRequestException("Путь к Tlc-скрипту не может быть пустым.");
+            if (!File.Exists(scriptPath))
+                throw new PreconditionFailedException("Файл Tlc-скрипта не найден.");
+
+            var document = new ConstructionDocument();
+            document.LoadFromFile(scriptPath);
+            return document.CreateModel() as ConstructedModel3dElement ??
+                throw new InvalidOperationException("Скрипт не создал Tlc-модель ожидаемого типа.");
+        }
+
+        private static object GeneratePropertySchema(ImProperties properties)
         {
             var schemaProperties = new Dictionary<string, object>();
             foreach (var property in properties)
@@ -506,7 +479,7 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotImplementedException();
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     case IntegerPropertyInfo intProp:
@@ -522,7 +495,7 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotImplementedException();
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     case BooleanPropertyInfo boolBrop:
@@ -534,7 +507,7 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotImplementedException();
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     case StringPropertyInfo stringProp:
@@ -546,7 +519,7 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotImplementedException();
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     case EnumerationPropertyInfo enumProp:
@@ -559,11 +532,11 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotImplementedException();
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     case ReferencePropertyInfo _:
-                        throw new NotImplementedException();
+                        throw CreateUnsupportedPropertyException(property.Tag);
                     case TypedPropertyInfo typedProp:
                         var typeDescriptor = typedProp.Type;
                         var typeProperties = typeDescriptor.GetAllProperties();
@@ -585,7 +558,7 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotImplementedException();
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     case null:
@@ -611,18 +584,18 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotSupportedException("Unexpected property value type.");
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     default:
-                        throw new NotSupportedException("Unexpected property type.");
+                        throw CreateUnsupportedPropertyException(property.Tag);
                 }
                 schemaProperties[property.Tag] = schema;
             }
             return schemaProperties;
         }
 
-        private void SetParameters(ConstructedModel3dElement tlcModel, Dictionary<string, object> args)
+        private static void SetParameters(ConstructedModel3dElement tlcModel, Dictionary<string, object> args)
         {
             var parameters = JsonUtils.GetObject(args, "parameters", null);
             if (parameters != null)
@@ -644,7 +617,7 @@ namespace Topomatic.ToolBridge.Tools
             }
         }
 
-        private ImProperties GenerateProperties(ImProperties source, Dictionary<string, object> parameters)
+        private static ImProperties GenerateProperties(ImProperties source, Dictionary<string, object> parameters)
         {
             var result = new ImProperties();
             foreach (var property in source)
@@ -703,7 +676,7 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotImplementedException();
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     case null:
@@ -729,14 +702,29 @@ namespace Topomatic.ToolBridge.Tools
                         }
                         else
                         {
-                            throw new NotSupportedException("Unexpected property value type.");
+                            throw CreateUnsupportedPropertyException(property.Tag);
                         }
                         break;
                     default:
-                        throw new NotSupportedException("Unexpected property type.");
+                        throw CreateUnsupportedPropertyException(property.Tag);
                 }
             }
             return result;
+        }
+
+        private static object CreateTlcDiagnosticResponse(Exception exception)
+        {
+            return new
+            {
+                result = exception.Message,
+                description = "Текст ошибки.",
+                status = "Возникла ошибка при выполнении скрипта."
+            };
+        }
+
+        private static NotSupportedException CreateUnsupportedPropertyException(string propertyName)
+        {
+            return new NotSupportedException($"Параметр Tlc-модели \"{propertyName}\" имеет неподдерживаемый тип или структуру.");
         }
     }
 }

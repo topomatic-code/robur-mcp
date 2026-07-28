@@ -59,8 +59,7 @@ namespace Topomatic.ToolBridge.Tools
         public object GetPlantElementInfo(Dictionary<string, object> args)
         {
             var libUid = JsonUtils.RequireString(args, "libUid");
-            var plantElement = TypedObjectCollections.Current.FindObject(libUid) as ImElement ??
-                throw new InvalidOperationException("Не удалось найти элемент посадки в библиотеке.");
+            var plantElement = RequirePlantElement(libUid);
             return new
             {
                 libUid,
@@ -101,12 +100,11 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreatePointPlant(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var libUid = JsonUtils.RequireString(args, "libUid");
-            var plantElement = TypedObjectCollections.Current.FindObject(libUid) as ImElement ??
-                throw new InvalidOperationException("Не удалось найти элемент посадки в библиотеке.");
+            var plantElement = RequirePlantElement(libUid);
             var position = JsonUtils.RequireObject(args, "position");
             var x = JsonUtils.RequireDouble(position, "x");
             var y = JsonUtils.RequireDouble(position, "y");
@@ -147,6 +145,15 @@ namespace Topomatic.ToolBridge.Tools
             {
                 drawing.EndUpdate();
             }
+        }
+
+        private static ImElement RequirePlantElement(string libUid)
+        {
+            if (string.IsNullOrWhiteSpace(libUid))
+                throw new BadRequestException("Идентификатор элемента посадки (libUid) не может быть пустым.");
+
+            return TypedObjectCollections.Current.FindObject(libUid) as ImElement ??
+                throw new PreconditionFailedException("Не удалось найти элемент посадки в библиотеке.");
         }
     }
 }

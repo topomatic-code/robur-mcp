@@ -21,7 +21,7 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetActiveDrawingInfo(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var activeSpaceBounds = drawing.ActiveSpace.Bounds;
             return new
             {
@@ -66,17 +66,17 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object AddLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var name = JsonUtils.RequireString(args, "name");
             var description = JsonUtils.GetString(args, "description", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var isVisible = JsonUtils.GetBool(args, "isVisible", null);
             if (string.IsNullOrWhiteSpace(name))
-                throw new InvalidOperationException("Имя слоя не может быть пустым.");
+                throw new BadRequestException("Имя слоя не может быть пустым.");
             if (drawing.Layers.IsExists(name))
-                throw new InvalidOperationException($"Слой с именем {name} уже содержится в активном чертеже.");
+                throw new PreconditionFailedException($"Слой с именем {name} уже содержится в активном чертеже.");
             if (colorIndex != null && colorIndex.Value < 0)
-                throw new InvalidOperationException("Индекс цвета слоя не может быть отрицательным.");
+                throw new BadRequestException("Индекс цвета слоя не может быть отрицательным.");
             var logger = Logger;
             if (logger != null)
                 drawing.BeginUpdate(logger.CreateLogString($"Создание слоя \"{name}\""));
@@ -84,7 +84,7 @@ namespace Topomatic.ToolBridge.Tools
                 drawing.BeginUpdate();
             try
             {
-                var layer = drawing.Layers.Add(name) ?? throw new InvalidOperationException("Не удалось создать слой.");
+                var layer = drawing.Layers.Add(name) ?? throw new ToolExecutionFailedException("Не удалось создать слой.");
                 if (description != null)
                     layer.Description = description;
                 if (colorIndex != null)
@@ -125,22 +125,22 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var currentName = JsonUtils.RequireString(args, "currentName");
             var name = JsonUtils.GetString(args, "name", null);
             var description = JsonUtils.GetString(args, "description", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var isVisible = JsonUtils.GetBool(args, "isVisible", null);
             if (string.IsNullOrWhiteSpace(currentName))
-                throw new InvalidOperationException("Текущее имя слоя не может быть пустым.");
+                throw new BadRequestException("Текущее имя слоя не может быть пустым.");
             if (!drawing.Layers.IsExists(currentName))
-                throw new InvalidOperationException($"Слой с именем {currentName} не содержится в активном чертеже.");
+                throw new PreconditionFailedException($"Слой с именем {currentName} не содержится в активном чертеже.");
             if (name != null && string.IsNullOrWhiteSpace(name))
-                throw new InvalidOperationException("Новое имя слоя не может быть пустым.");
+                throw new BadRequestException("Новое имя слоя не может быть пустым.");
             if (colorIndex != null && colorIndex.Value < 0)
-                throw new InvalidOperationException("Индекс цвета слоя не может быть отрицательным.");
+                throw new BadRequestException("Индекс цвета слоя не может быть отрицательным.");
             if (name != null && !string.Equals(currentName, name) && drawing.Layers.IsExists(name))
-                throw new InvalidOperationException($"Слой с именем {name} уже содержится в активном чертеже.");
+                throw new PreconditionFailedException($"Слой с именем {name} уже содержится в активном чертеже.");
             var layer = drawing.Layers[currentName] ?? throw new InvalidOperationException($"Не удалось получить слой с именем {currentName}.");
             var logger = Logger;
             if (logger != null)
@@ -187,15 +187,15 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
-                throw new InvalidOperationException("Имя слоя не может быть пустым.");
+                throw new BadRequestException("Имя слоя не может быть пустым.");
             if (!drawing.Layers.IsExists(name))
-                throw new InvalidOperationException($"Слой с именем {name} не содержится в активном чертеже.");
+                throw new PreconditionFailedException($"Слой с именем {name} не содержится в активном чертеже.");
             var layer = drawing.Layers[name] ?? throw new InvalidOperationException($"Не удалось получить слой с именем {name}.");
             if (layer.IsSystem)
-                throw new InvalidOperationException($"Системный слой {name} нельзя удалить.");
+                throw new PreconditionFailedException($"Системный слой {name} нельзя удалить.");
             var result = CreateLayerObj(layer);
             var logger = Logger;
             if (logger != null)
@@ -205,7 +205,7 @@ namespace Topomatic.ToolBridge.Tools
             try
             {
                 if (!drawing.Layers.Remove(name))
-                    throw new InvalidOperationException($"Не удалось удалить слой с именем {name}.");
+                    throw new ToolExecutionFailedException($"Не удалось удалить слой с именем {name}.");
                 return new
                 {
                     result,
@@ -236,12 +236,12 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetActiveLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
-                throw new InvalidOperationException("Имя слоя не может быть пустым.");
+                throw new BadRequestException("Имя слоя не может быть пустым.");
             if (!drawing.Layers.IsExists(name))
-                throw new InvalidOperationException($"Слой с именем {name} не содержится в активном чертеже.");
+                throw new PreconditionFailedException($"Слой с именем {name} не содержится в активном чертеже.");
             var logger = Logger;
             if (logger != null)
                 drawing.BeginUpdate(logger.CreateLogString($"Установка активного слоя \"{name}\""));
@@ -249,7 +249,7 @@ namespace Topomatic.ToolBridge.Tools
                 drawing.BeginUpdate();
             try
             {
-                var layer = drawing.Layers.ActivateLayer(name) ?? throw new InvalidOperationException($"Не удалось активировать слой с именем {name}.");
+                var layer = drawing.Layers.ActivateLayer(name) ?? throw new ToolExecutionFailedException($"Не удалось активировать слой с именем {name}.");
                 return new
                 {
                     result = CreateLayerObj(layer),
@@ -297,20 +297,20 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetEntitiesLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidArray = JsonUtils.RequireStringArray(args, "guids");
             var layerName = JsonUtils.RequireString(args, "layerName");
             if (guidArray.Length == 0)
-                throw new InvalidOperationException("Необходимо передать хотя бы один guid сущности.");
+                throw new BadRequestException("Необходимо передать хотя бы один guid сущности.");
             var entities = new List<(string guid, DwgEntity entity, string name, string type, string typeDescription)>(guidArray.Length);
             for (int i = 0; i < guidArray.Length; i++)
             {
                 var guidStr = guidArray[i];
-                var guid = Guid.Parse(guidStr);
+                var guid = DwgUtils.ParseGuid(guidStr);
                 var (entity, name) = DwgUtils.FindEntity<DwgEntity>(drawing, sessionStorage, guid);
                 if (entity == null)
-                    throw new InvalidOperationException($"Не удалось найти элемент по указанному guid \"{guidStr}\".");
+                    throw new PreconditionFailedException($"Не удалось найти элемент по указанному guid \"{guidStr}\".");
                 var (type, typeDescription) = DwgUtils.GetEntityType(entity);
                 entities.Add((guidStr, entity, name ?? "none", type, typeDescription));
             }
@@ -380,21 +380,21 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetEntitiesColor(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidArray = JsonUtils.RequireStringArray(args, "guids");
             var colorMode = JsonUtils.RequireString(args, "colorMode");
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             if (guidArray.Length == 0)
-                throw new InvalidOperationException("Необходимо передать хотя бы один guid сущности.");
+                throw new BadRequestException("Необходимо передать хотя бы один guid сущности.");
             var entities = new List<(string guid, DwgEntity entity, string name, string type, string typeDescription)>(guidArray.Length);
             for (int i = 0; i < guidArray.Length; i++)
             {
                 var guidStr = guidArray[i];
-                var guid = Guid.Parse(guidStr);
+                var guid = DwgUtils.ParseGuid(guidStr);
                 var (entity, name) = DwgUtils.FindEntity<DwgEntity>(drawing, sessionStorage, guid);
                 if (entity == null)
-                    throw new InvalidOperationException($"Не удалось найти элемент по указанному guid \"{guidStr}\".");
+                    throw new PreconditionFailedException($"Не удалось найти элемент по указанному guid \"{guidStr}\".");
                 var (type, typeDescription) = DwgUtils.GetEntityType(entity);
                 entities.Add((guidStr, entity, name ?? "none", type, typeDescription));
             }
@@ -451,15 +451,15 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetEntities(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var startIndex = JsonUtils.RequireInt(args, "startIndex");
             var endIndex = JsonUtils.RequireInt(args, "endIndex");
             var drawingEntities = drawing.ActiveSpace.Entities;
             if (startIndex < 0 || startIndex >= drawingEntities.Count)
-                throw new InvalidOperationException("Значение startIndex не попадает в допустимый диапазон.");
+                throw new BadRequestException("Значение startIndex не попадает в допустимый диапазон.");
             if (endIndex < startIndex || endIndex >= drawingEntities.Count)
-                throw new InvalidOperationException("Значение endIndex не попадает в допустимый диапазон.");
+                throw new BadRequestException("Значение endIndex не попадает в допустимый диапазон.");
             var entities = new List<object>();
             for (int i = startIndex; i <= endIndex; i++)
             {
@@ -481,7 +481,8 @@ namespace Topomatic.ToolBridge.Tools
                 }
                 else
                 {
-                    var guid = Guid.Parse(guidStr);
+                    if (!Guid.TryParse(guidStr, out var guid))
+                        throw new InvalidOperationException("Словарь расширения сущности содержит некорректный GUID.");
                     if (!sessionStorage.HasObject(guid))
                         sessionStorage.AddObject(guid, entity);
                 }
@@ -515,45 +516,16 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetActiveSpaceEntity(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
-            DwgEntity resultEntity = null;
-            var name = "none";
-            if (sessionStorage.HasObject(guid))
-            {
-                resultEntity = (DwgEntity)sessionStorage.GetObject(guid);
-                if (resultEntity.Drawing != drawing)
-                    throw new InvalidOperationException($"Элемент (сущность) с guid \"{guidStr}\" не находится в активном чертеже.");
-                if (resultEntity.HasExtensionDictionary)
-                {
-                    var extDict = resultEntity.GetExtensionDictionary();
-                    name = extDict.GetString("name", "none");
-                }
-            }
-            else
-            {
-                foreach (var dwgEntity in drawing.ActiveSpace.Entities)
-                {
-                    if (dwgEntity.HasExtensionDictionary)
-                    {
-                        var extDict = dwgEntity.GetExtensionDictionary();
-                        if (string.Equals(guidStr, extDict.GetString("guid", null)))
-                        {
-                            sessionStorage.AddObject(guid, dwgEntity);
-                            resultEntity = dwgEntity;
-                            name = extDict.GetString("name", "none");
-                            break;
-                        }
-                    }
-                }
-            }
+            var guid = DwgUtils.ParseGuid(guidStr);
+            var (resultEntity, name) = DwgUtils.FindEntity<DwgEntity>(drawing, sessionStorage, guid);
             if (resultEntity == null)
-                throw new InvalidOperationException($"Не удалось найти элемент (сущность) по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти элемент (сущность) по указанному guid \"{guidStr}\".");
             return new
             {
-                result = DwgUtils.CreateEntityObj(resultEntity, guidStr, name),
+                result = DwgUtils.CreateEntityObj(resultEntity, guidStr, name ?? "none"),
                 description = "Элемент (сущность) чертежа.",
                 status = "Элемент (сущность) чертежа успешно получен."
             };
@@ -594,8 +566,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreatePolyline(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var pointArray = JsonUtils.RequireArray(args, "points");
             var layerName = JsonUtils.GetString(args, "layerName", null);
@@ -678,10 +650,10 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdatePolyline(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
             var pointArray = JsonUtils.GetArray(args, "points", null);
             var closed = JsonUtils.GetBool(args, "closed", null);
@@ -690,10 +662,10 @@ namespace Topomatic.ToolBridge.Tools
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var (polyline, currentName) = DwgUtils.FindEntity<DwgPolyline>(drawing, sessionStorage, guid);
             if (polyline == null)
-                throw new InvalidOperationException($"Не удалось найти полилинию по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти полилинию по указанному guid \"{guidStr}\".");
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление полилинии \"{name}\""));
+                drawing.BeginUpdate(logger.CreateLogString($"Обновление полилинии \"{name ?? currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -787,8 +759,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateTable(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var position = JsonUtils.RequireObject(args, "position");
             var rowCount = JsonUtils.RequireInt(args, "rowCount");
@@ -819,9 +791,9 @@ namespace Topomatic.ToolBridge.Tools
                     var endColumn = startColumn + columnSpan - 1;
                     var endRow = startRow + rowSpan - 1;
                     if (endColumn >= columnCount)
-                        throw new InvalidOperationException($"Индекс конечного столбца ячейки вышел за допустимый диапазон. Убедитесь в правильности значения columnSpan = {columnSpan}, для ячейки (row = {startRow}, column = {startColumn}).");
+                        throw new BadRequestException($"Индекс конечного столбца ячейки вышел за допустимый диапазон. Убедитесь в правильности значения columnSpan = {columnSpan}, для ячейки (row = {startRow}, column = {startColumn}).");
                     if (endRow >= rowCount)
-                        throw new InvalidOperationException($"Индекс конечной строки ячейки вышел за допустимый диапазон. Убедитесь в правильности значения rowSpan = {rowSpan}, для ячейки (row = {startRow}, column = {startColumn}).");
+                        throw new BadRequestException($"Индекс конечной строки ячейки вышел за допустимый диапазон. Убедитесь в правильности значения rowSpan = {rowSpan}, для ячейки (row = {startRow}, column = {startColumn}).");
                     if (rowSpan > 1 || columnSpan > 1)
                         table.MergeCells(startColumn, startRow, endColumn, endRow);
                     table[startRow, startColumn].SourceText = text;
@@ -900,10 +872,10 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateTable(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
             var position = JsonUtils.GetObject(args, "position", null);
             var rowCount = JsonUtils.GetInt(args, "rowCount", null);
@@ -914,10 +886,10 @@ namespace Topomatic.ToolBridge.Tools
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var (table, currentName) = DwgUtils.FindEntity<DwgTable>(drawing, sessionStorage, guid);
             if (table == null)
-                throw new InvalidOperationException($"Не удалось найти таблицу по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти таблицу по указанному guid \"{guidStr}\".");
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление таблицы \"{name}\""));
+                drawing.BeginUpdate(logger.CreateLogString($"Обновление таблицы \"{name ?? currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -992,9 +964,9 @@ namespace Topomatic.ToolBridge.Tools
                         var endColumn = startColumn + columnSpan - 1;
                         var endRow = startRow + rowSpan - 1;
                         if (endColumn >= columnCount)
-                            throw new InvalidOperationException($"Индекс конечного столбца ячейки вышел за допустимый диапазон. Убедитесь в правильности значения columnSpan = {columnSpan}, для ячейки (row = {startRow}, column = {startColumn}).");
+                            throw new BadRequestException($"Индекс конечного столбца ячейки вышел за допустимый диапазон. Убедитесь в правильности значения columnSpan = {columnSpan}, для ячейки (row = {startRow}, column = {startColumn}).");
                         if (endRow >= rowCount)
-                            throw new InvalidOperationException($"Индекс конечной строки ячейки вышел за допустимый диапазон. Убедитесь в правильности значения rowSpan = {rowSpan}, для ячейки (row = {startRow}, column = {startColumn}).");
+                            throw new BadRequestException($"Индекс конечной строки ячейки вышел за допустимый диапазон. Убедитесь в правильности значения rowSpan = {rowSpan}, для ячейки (row = {startRow}, column = {startColumn}).");
                         if (rowSpan > 1 || columnSpan > 1)
                             table.MergeCells(startColumn, startRow, endColumn, endRow);
                         table[startRow, startColumn].SourceText = text;
@@ -1054,8 +1026,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateMText(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var text = JsonUtils.RequireString(args, "text");
             var position = JsonUtils.RequireObject(args, "position");
@@ -1063,7 +1035,7 @@ namespace Topomatic.ToolBridge.Tools
             var y = JsonUtils.RequireDouble(position, "y");
             var height = JsonUtils.RequireDouble(args, "height");
             if (height <= 0)
-                throw new InvalidOperationException("Высота текста (height) должна быть больше 0.");
+                throw new BadRequestException("Высота текста (height) должна быть больше 0.");
             var rotation = JsonUtils.GetDouble(args, "rotation", 0).Value;
             var attachmentPointString = JsonUtils.GetString(args, "attachmentPoint", null);
             var layerName = JsonUtils.GetString(args, "layerName", null);
@@ -1148,9 +1120,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateMText(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
             var text = JsonUtils.GetString(args, "text", null);
             var position = JsonUtils.GetObject(args, "position", null);
@@ -1160,13 +1132,13 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var (mText, currentName) = DwgUtils.FindEntity<DwgMText>(drawing, sessionStorage, guid);
             if (mText == null)
-                throw new InvalidOperationException($"Не удалось найти многострочный текст по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти многострочный текст по указанному guid \"{guidStr}\".");
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление многострочного текста \"{name}\""));
+                drawing.BeginUpdate(logger.CreateLogString($"Обновление многострочного текста \"{name ?? currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -1195,7 +1167,7 @@ namespace Topomatic.ToolBridge.Tools
                 if (height != null)
                 {
                     if (height.Value <= 0)
-                        throw new InvalidOperationException("Высота текста (height) должна быть больше 0.");
+                        throw new BadRequestException("Высота текста (height) должна быть больше 0.");
                     mText.Height = height.Value;
                 }
                 if (rotation != null)
@@ -1265,8 +1237,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateText(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var text = JsonUtils.RequireString(args, "text");
             var position = JsonUtils.RequireObject(args, "position");
@@ -1274,7 +1246,7 @@ namespace Topomatic.ToolBridge.Tools
             var y = JsonUtils.RequireDouble(position, "y");
             var height = JsonUtils.RequireDouble(args, "height");
             if (height <= 0)
-                throw new InvalidOperationException("Высота текста (height) должна быть больше 0.");
+                throw new BadRequestException("Высота текста (height) должна быть больше 0.");
             var rotation = JsonUtils.GetDouble(args, "rotation", 0) ?? 0;
             var justifyString = JsonUtils.GetString(args, "justify", null);
             var textAlignmentPoint = JsonUtils.GetObject(args, "textAlignmentPoint", null);
@@ -1376,9 +1348,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateText(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
             var text = JsonUtils.GetString(args, "text", null);
             var position = JsonUtils.GetObject(args, "position", null);
@@ -1389,13 +1361,13 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var (dwgText, currentName) = DwgUtils.FindEntity<DwgText>(drawing, sessionStorage, guid);
             if (dwgText == null)
-                throw new InvalidOperationException($"Не удалось найти текст по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти текст по указанному guid \"{guidStr}\".");
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление текста \"{name}\""));
+                drawing.BeginUpdate(logger.CreateLogString($"Обновление текста \"{name ?? currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -1424,7 +1396,7 @@ namespace Topomatic.ToolBridge.Tools
                 if (height != null)
                 {
                     if (height.Value <= 0)
-                        throw new InvalidOperationException("Высота текста (height) должна быть больше 0.");
+                        throw new BadRequestException("Высота текста (height) должна быть больше 0.");
                     dwgText.Height = height.Value;
                 }
                 if (rotation != null)
@@ -1483,8 +1455,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateCircle(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var center = JsonUtils.RequireObject(args, "center");
             var centerX = JsonUtils.RequireDouble(center, "x");
@@ -1494,7 +1466,7 @@ namespace Topomatic.ToolBridge.Tools
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             if (radius <= 0)
-                throw new InvalidOperationException("Радиус окружности (radius) должен быть больше 0.");
+                throw new BadRequestException("Радиус окружности (radius) должен быть больше 0.");
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
             var logger = Logger;
@@ -1563,22 +1535,22 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateCircle(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
             var center = JsonUtils.GetObject(args, "center", null);
             var radius = JsonUtils.GetDouble(args, "radius", null);
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var (circle, currentName) = DwgUtils.FindEntity<DwgCircle>(drawing, sessionStorage, guid);
             if (circle == null)
-                throw new InvalidOperationException($"Не удалось найти окружность по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти окружность по указанному guid \"{guidStr}\".");
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление окружности \"{name}\""));
+                drawing.BeginUpdate(logger.CreateLogString($"Обновление окружности \"{name ?? currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -1605,7 +1577,7 @@ namespace Topomatic.ToolBridge.Tools
                 if (radius != null)
                 {
                     if (radius.Value <= 0)
-                        throw new InvalidOperationException("Радиус окружности (radius) должен быть больше 0.");
+                        throw new BadRequestException("Радиус окружности (radius) должен быть больше 0.");
                     circle.Radius = radius.Value;
                 }
                 DwgUtils.ApplyEntityLayer(drawing, circle, layerName);
@@ -1663,8 +1635,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateLine(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var startPoint = JsonUtils.RequireObject(args, "startPoint");
             var startX = JsonUtils.RequireDouble(startPoint, "x");
@@ -1752,22 +1724,22 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateLine(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
             var startPoint = JsonUtils.GetObject(args, "startPoint", null);
             var endPoint = JsonUtils.GetObject(args, "endPoint", null);
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var (line, currentName) = DwgUtils.FindEntity<DwgLine>(drawing, sessionStorage, guid);
             if (line == null)
-                throw new InvalidOperationException($"Не удалось найти линию по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти линию по указанному guid \"{guidStr}\".");
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление линии \"{name}\""));
+                drawing.BeginUpdate(logger.CreateLogString($"Обновление линии \"{name ?? currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -1870,8 +1842,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateHatch(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var contours = JsonUtils.RequireArray(args, "contours");
             var patternName = JsonUtils.GetString(args, "patternName", "SOLID");
@@ -1897,7 +1869,7 @@ namespace Topomatic.ToolBridge.Tools
                 if (patternScale != null)
                 {
                     if (patternScale.Value <= 0)
-                        throw new InvalidOperationException("Масштаб штриховки (patternScale) должен быть больше 0.");
+                        throw new BadRequestException("Масштаб штриховки (patternScale) должен быть больше 0.");
                     hatch.PatternScale = patternScale.Value;
                 }
                 if (patternAngle != null)
@@ -1987,9 +1959,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateHatch(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
             var contours = JsonUtils.GetArray(args, "contours", null);
             var patternName = JsonUtils.GetString(args, "patternName", null);
@@ -2000,13 +1972,13 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var (hatch, currentName) = DwgUtils.FindEntity<DwgHatch>(drawing, sessionStorage, guid);
             if (hatch == null)
-                throw new InvalidOperationException($"Не удалось найти штриховку по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти штриховку по указанному guid \"{guidStr}\".");
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление штриховки \"{name}\""));
+                drawing.BeginUpdate(logger.CreateLogString($"Обновление штриховки \"{name ?? currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -2029,13 +2001,13 @@ namespace Topomatic.ToolBridge.Tools
                 if (patternName != null)
                 {
                     if (string.IsNullOrWhiteSpace(patternName))
-                        throw new InvalidOperationException("Имя шаблона штриховки (patternName) не может быть пустым.");
+                        throw new BadRequestException("Имя шаблона штриховки (patternName) не может быть пустым.");
                     hatch.PatternName = patternName;
                 }
                 if (patternScale != null)
                 {
                     if (patternScale.Value <= 0)
-                        throw new InvalidOperationException("Масштаб штриховки (patternScale) должен быть больше 0.");
+                        throw new BadRequestException("Масштаб штриховки (patternScale) должен быть больше 0.");
                     hatch.PatternScale = patternScale.Value;
                 }
                 if (patternAngle != null)
@@ -2062,14 +2034,14 @@ namespace Topomatic.ToolBridge.Tools
         private static void SetHatchContours(DwgHatch hatch, Dictionary<string, object>[] contours)
         {
             if (contours == null || contours.Length == 0)
-                throw new InvalidOperationException("Необходимо передать хотя бы один контур штриховки.");
+                throw new BadRequestException("Необходимо передать хотя бы один контур штриховки.");
             hatch.BoundaryPath.Clear();
             for (int i = 0; i < contours.Length; i++)
             {
                 var contourObject = contours[i];
                 var points = JsonUtils.RequireArray(contourObject, "points");
                 if (points.Length < 3)
-                    throw new InvalidOperationException($"Контур с индексом {i} должен содержать как минимум 3 точки.");
+                    throw new BadRequestException($"Контур с индексом {i} должен содержать как минимум 3 точки.");
                 var contourPoints = new List<Vector2D>(points.Length + 1);
                 for (int j = 0; j < points.Length; j++)
                 {
@@ -2109,7 +2081,7 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetHatchPatterns(Dictionary<string, object> args)
         {
-            var patternManager = HatchPatternManager.Current ?? throw new InvalidOperationException("Не удалось получить доступ к менеджеру штриховок.");
+            var patternManager = HatchPatternManager.Current ?? throw new PreconditionFailedException("Не удалось получить доступ к менеджеру штриховок.");
             var patterns = patternManager.GetDefinedPatterns() ?? Enumerable.Empty<HatchPattern>();
             var patternObjects = patterns
                 .Select(pattern => new
@@ -2158,42 +2130,14 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveActiveSpaceEntity(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
-            DwgEntity entity = null;
-            var name = "none";
-            if (sessionStorage.HasObject(guid))
-            {
-                entity = (DwgEntity)sessionStorage.GetObject(guid);
-                if (entity.Drawing != drawing)
-                    throw new InvalidOperationException($"Элемент с guid \"{guidStr}\" не находится в активном чертеже.");
-                sessionStorage.RemoveObject(guid);
-                if (entity.HasExtensionDictionary)
-                {
-                    var exitDict = entity.GetExtensionDictionary();
-                    name = exitDict.GetString("name", "none");
-                }
-            }
-            else
-            {
-                foreach (var e in drawing.ActiveSpace.Entities)
-                {
-                    if (e.HasExtensionDictionary)
-                    {
-                        var extDict = e.GetExtensionDictionary();
-                        if (string.Equals(guidStr, extDict.GetString("guid", null)))
-                        {
-                            entity = e;
-                            name = extDict.GetString("name", "none");
-                            break;
-                        }
-                    }
-                }
-            }
+            var guid = DwgUtils.ParseGuid(guidStr);
+            var (entity, name) = DwgUtils.FindEntity<DwgEntity>(drawing, sessionStorage, guid);
             if (entity == null)
-                throw new InvalidOperationException($"Не удалось найти элемент по указанному guid \"{guidStr}\".");
+                throw new PreconditionFailedException($"Не удалось найти элемент по указанному guid \"{guidStr}\".");
+            name = name ?? "none";
             var logger = Logger;
             if (logger != null)
                 drawing.BeginUpdate(logger.CreateLogString($"Удаление элемента \"{name}\""));
@@ -2201,7 +2145,9 @@ namespace Topomatic.ToolBridge.Tools
                 drawing.BeginUpdate();
             try
             {
-                drawing.ActiveSpace.Entities.Remove(entity);
+                if (!drawing.ActiveSpace.Entities.Remove(entity))
+                    throw new ToolExecutionFailedException($"Не удалось удалить элемент по указанному guid \"{guidStr}\".");
+                sessionStorage.RemoveObject(guid);
                 var (type, typeDescription) = DwgUtils.GetEntityType(entity);
                 return new
                 {

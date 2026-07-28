@@ -29,8 +29,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateSolid(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
@@ -113,22 +113,20 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object AddFaces(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var faces = JsonUtils.RequireArray(args, "faces");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
-            if (solidEntity == null)
-                throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
-            var solidElement = solidEntity.Element as StaticSolidElement ??
-                throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
+            var solidElement = DwgUtils.RequireSolidElement(solidEntity, guidStr);
             var shell = new Cad.Foundation.Brep.Shell();
             Cad.Foundation.Brep.Tools.Copy(solidElement.GetBrep(), shell);
             AddFacesToShell(shell, faces);
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Добавление граней"));
+                drawing.BeginUpdate(logger.CreateLogString(
+                    $"Добавление граней твердого тела \"{currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -142,18 +140,8 @@ namespace Topomatic.ToolBridge.Tools
                 );
                 newSolidElement.Color = solidElement.Color;
                 solidEntity.Element = newSolidElement;
-
-                // solid entity не допускает трансформаций
-                solidEntity.Position = new Vector3D(0, 0, 0);
-                solidEntity.Rotation = 0.0;
-                solidEntity.Scale = new Vector3D(1, 1, 1);
-
-                var name = "none";
-                if (solidEntity.HasExtensionDictionary)
-                {
-                    var extDict = solidEntity.GetExtensionDictionary();
-                    name = extDict.GetString("name", name);
-                }
+                ResetSolidTransform(solidEntity);
+                var name = currentName ?? "none";
                 return new
                 {
                     result = DwgUtils.CreateSolidObj(solidEntity, guidStr, name),
@@ -170,13 +158,13 @@ namespace Topomatic.ToolBridge.Tools
         private static void AddFacesToShell(Cad.Foundation.Brep.Shell shell, Dictionary<string, object>[] faces)
         {
             if (faces == null || faces.Length == 0)
-                throw new InvalidOperationException("Необходимо передать хотя бы одну грань.");
+                throw new BadRequestException("Необходимо передать хотя бы одну грань.");
             for (int i = 0; i < faces.Length; i++)
             {
                 var faceObject = faces[i];
                 var vertices = JsonUtils.RequireArray(faceObject, "vertices");
                 if (vertices.Length < 3)
-                    throw new InvalidOperationException($"Грань с индексом {i} должна содержать как минимум 3 вершины.");
+                    throw new BadRequestException($"Грань с индексом {i} должна содержать как минимум 3 вершины.");
                 var face = new List<Vector3D>(vertices.Length);
                 for (int j = 0; j < vertices.Length; j++)
                 {
@@ -207,15 +195,12 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetFaces(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
-            if (solidEntity == null)
-                throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
-            var solidElement = solidEntity.Element as StaticSolidElement ??
-                throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
+            var solidElement = DwgUtils.RequireSolidElement(solidEntity, guidStr);
             var shell = solidElement.GetBrep();
             var faces = shell.Faces
                 .SelectMany(f => f.Loops.Select(l => l.GetPolygon3d()))
@@ -239,7 +224,7 @@ namespace Topomatic.ToolBridge.Tools
                     faces
                 },
                 description = "Грани твердого тела.",
-                status = $"Грани твердого тела успешно получены."
+                status = "Грани твердого тела успешно получены."
             };
         }
 
@@ -282,8 +267,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Section(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var positionObject = JsonUtils.RequireObject(args, "position");
             var normalObject = JsonUtils.RequireObject(args, "normal");
@@ -298,14 +283,11 @@ namespace Topomatic.ToolBridge.Tools
                 JsonUtils.RequireDouble(normalObject, "z")
             );
             if (normal.Length <= 1e-9)
-                throw new InvalidOperationException("Нормаль плоскости сечения не может быть нулевой.");
+                throw new BadRequestException("Нормаль плоскости сечения не может быть нулевой.");
             normal.Normalize();
-            var guid = Guid.Parse(guidStr);
+            var guid = DwgUtils.ParseGuid(guidStr);
             var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
-            if (solidEntity == null)
-                throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
-            var solidElement = solidEntity.Element as StaticSolidElement ??
-                throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
+            var solidElement = DwgUtils.RequireSolidElement(solidEntity, guidStr);
             var solidShell = solidElement.GetBrep();
             var cuttingShell = CreateCuttingPlaneShell(solidShell, position, normal);
             var clipResult = Cad.Foundation.Brep.Tools.Clip(cuttingShell, solidShell, true);
@@ -390,18 +372,15 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveFaces(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var faceIndexes = JsonUtils.RequireIntArray(args, "faceIndexes");
             if (faceIndexes.Length == 0)
-                throw new InvalidOperationException("Необходимо передать хотя бы один индекс грани.");
-            var guid = Guid.Parse(guidStr);
+                throw new BadRequestException("Необходимо передать хотя бы один индекс грани.");
+            var guid = DwgUtils.ParseGuid(guidStr);
             var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
-            if (solidEntity == null)
-                throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
-            var solidElement = solidEntity.Element as StaticSolidElement ??
-                throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
+            var solidElement = DwgUtils.RequireSolidElement(solidEntity, guidStr);
             var shell = new Cad.Foundation.Brep.Shell();
             Cad.Foundation.Brep.Tools.Copy(solidElement.GetBrep(), shell);
             var shellFaces = shell.Faces.ToArray();
@@ -410,14 +389,15 @@ namespace Topomatic.ToolBridge.Tools
             foreach (var faceIndex in faceIndexes)
             {
                 if (faceIndex < 0 || faceIndex >= shellFaces.Length)
-                    throw new InvalidOperationException($"Индекс грани {faceIndex} выходит за пределы допустимого диапазона 0..{shellFaces.Length - 1}.");
+                    throw new BadRequestException($"Индекс грани {faceIndex} выходит за пределы допустимого диапазона 0..{shellFaces.Length - 1}.");
                 if (usedIndexes.Add(faceIndex))
                     facesToRemove.Add(shellFaces[faceIndex]);
             }
             Cad.Foundation.Brep.Tools.RemoveFaces(shell, facesToRemove);
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Удаление граней"));
+                drawing.BeginUpdate(logger.CreateLogString(
+                    $"Удаление граней твердого тела \"{currentName ?? "none"}\""));
             else
                 drawing.BeginUpdate();
             try
@@ -431,18 +411,8 @@ namespace Topomatic.ToolBridge.Tools
                 );
                 newSolidElement.Color = solidElement.Color;
                 solidEntity.Element = newSolidElement;
-
-                // solid entity не допускает трансформаций
-                solidEntity.Position = new Vector3D(0, 0, 0);
-                solidEntity.Rotation = 0.0;
-                solidEntity.Scale = new Vector3D(1, 1, 1);
-
+                ResetSolidTransform(solidEntity);
                 var name = currentName ?? "none";
-                if (solidEntity.HasExtensionDictionary)
-                {
-                    var extDict = solidEntity.GetExtensionDictionary();
-                    name = extDict.GetString("name", name);
-                }
                 return new
                 {
                     result = DwgUtils.CreateSolidObj(solidEntity, guidStr, name),
@@ -498,30 +468,27 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Transform(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var operation = JsonUtils.RequireString(args, "operation");
             var elements = JsonUtils.RequireStringArray(args, "elements");
             var parameters = JsonUtils.RequireObject(args, "parameters");
             var createCopy = JsonUtils.RequireBool(args, "createCopy");
             var namePrefix = JsonUtils.GetString(args, "namePrefix", null);
             if (elements.Length == 0)
-                throw new InvalidOperationException("Необходимо передать хотя бы один guid твердого тела.");
+                throw new BadRequestException("Необходимо передать хотя бы один guid твердого тела.");
             var solids = new List<(string guidStr, DwgModel3DElement entity, StaticSolidElement element, string name)>(elements.Length);
             for (int i = 0; i < elements.Length; i++)
             {
                 var guidStr = elements[i];
-                var guid = Guid.Parse(guidStr);
+                var guid = DwgUtils.ParseGuid(guidStr);
                 var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
-                if (solidEntity == null)
-                    throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
-                var solidElement = solidEntity.Element as StaticSolidElement ??
-                    throw new InvalidOperationException($"Не удалось найти твердое тело по указанному guid \"{guidStr}\".");
+                var solidElement = DwgUtils.RequireSolidElement(solidEntity, guidStr);
                 solids.Add((guidStr, solidEntity, solidElement, currentName ?? "none"));
             }
             var logger = Logger;
             if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Трансформация твердых тел"));
+                drawing.BeginUpdate(logger.CreateLogString("Трансформация твердых тел"));
             else
                 drawing.BeginUpdate();
             try
@@ -548,10 +515,7 @@ namespace Topomatic.ToolBridge.Tools
                         );
                         copyEntity.Element = copyElement;
 
-                        // solid entity не допускает трансформаций
-                        copyEntity.Position = new Vector3D(0, 0, 0);
-                        copyEntity.Rotation = 0.0;
-                        copyEntity.Scale = new Vector3D(1, 1, 1);
+                        ResetSolidTransform(copyEntity);
 
                         drawing.ActiveSpace.Add(copyEntity);
                         DwgUtils.ApplyEntityLayer(drawing, copyEntity, solidInfo.entity.Layer?.Name);
@@ -576,10 +540,7 @@ namespace Topomatic.ToolBridge.Tools
                         newSolidElement.Color = solidInfo.element.Color;
                         solidInfo.entity.Element = newSolidElement;
 
-                        // solid entity не допускает трансформаций
-                        solidInfo.entity.Position = new Vector3D(0, 0, 0);
-                        solidInfo.entity.Rotation = 0.0;
-                        solidInfo.entity.Scale = new Vector3D(1, 1, 1);
+                        ResetSolidTransform(solidInfo.entity);
 
                         results.Add(DwgUtils.CreateSolidObj(solidInfo.entity, solidInfo.guidStr, solidInfo.name));
                     }
@@ -622,10 +583,10 @@ namespace Topomatic.ToolBridge.Tools
             {
                 var scale = JsonUtils.RequireDouble(parameters, "scale");
                 if (scale <= 0)
-                    throw new InvalidOperationException("Коэффициент масштабирования (scale) должен быть больше 0.");
+                    throw new BadRequestException("Коэффициент масштабирования (scale) должен быть больше 0.");
                 return Cad.Foundation.Brep.Tools.Scale(scale, shell);
             }
-            throw new InvalidOperationException("Неизвестное значение operation. Допустимые значения: Translate, Rotate, Scale.");
+            throw new BadRequestException("Неизвестное значение operation. Допустимые значения: Translate, Rotate, Scale.");
         }
 
         private static string CreateSolidCopyName(string sourceName, string namePrefix, int totalCount, int index)
@@ -699,8 +660,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Sweep(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var section = JsonUtils.RequireArray(args, "section");
             var curve = JsonUtils.RequireArray(args, "curve");
@@ -708,14 +669,14 @@ namespace Topomatic.ToolBridge.Tools
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             if (section.Length == 0)
-                throw new InvalidOperationException("Сечение должно содержать хотя бы один контур.");
+                throw new BadRequestException("Сечение должно содержать хотя бы один контур.");
             var sectionContours = new List<(List<Vector2D> positions, int level)>(section.Length);
             for (int i = 0; i < section.Length; i++)
             {
                 var sectionObject = section[i];
                 var contour = JsonUtils.RequireArray(sectionObject, "contour");
                 if (contour.Length < 3)
-                    throw new InvalidOperationException($"Контур сечения с индексом {i} должен содержать как минимум 3 точки.");
+                    throw new BadRequestException($"Контур сечения с индексом {i} должен содержать как минимум 3 точки.");
                 var contourPoints = new List<Vector2D>(contour.Length);
                 for (int j = 0; j < contour.Length; j++)
                 {
@@ -759,7 +720,7 @@ namespace Topomatic.ToolBridge.Tools
                 curvePoints.Add(new Vector3D(x, y, z));
             }
             if (curvePoints.Count < 2)
-                throw new InvalidOperationException("Кривая вытягивания должна содержать как минимум 2 точки.");
+                throw new BadRequestException("Кривая вытягивания должна содержать как минимум 2 точки.");
             Cad.Foundation.Brep.Shell shell = null;
             foreach (var (positions, level) in sectionContours)
             {
@@ -838,22 +799,21 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Union(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var elements = JsonUtils.RequireStringArray(args, "elements");
             if (elements.Length < 2)
-                throw new InvalidOperationException("Количество элементов 'elements' должно быть не менее 2.");
+                throw new BadRequestException("Количество элементов 'elements' должно быть не менее 2.");
             var initialEntities = new List<DwgModel3DElement>();
             var shells = new List<Cad.Foundation.Brep.Shell>();
             foreach (var elementGuidStr in elements)
             {
-                var elementGuid = Guid.Parse(elementGuidStr);
-                var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, elementGuid);
-                if (solidEntity == null)
-                    throw new InvalidOperationException($"Не удалось найти тело по указанному guid \"{elementGuidStr}\".");
+                var elementGuid = DwgUtils.ParseGuid(elementGuidStr);
+                var (solidEntity, _) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, elementGuid);
+                var solidElement = DwgUtils.RequireSolidElement(solidEntity, elementGuidStr);
                 initialEntities.Add(solidEntity);
-                shells.Add(solidEntity.Element.GetBrep());
+                shells.Add(solidElement.GetBrep());
             }
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
@@ -877,11 +837,7 @@ namespace Topomatic.ToolBridge.Tools
                 for (int i = 0; i < initialEntities.Count; i++)
                 {
                     var entity = initialEntities[i];
-
-                    // solid entity не допускает трансформаций
-                    entity.Position = new Vector3D(0, 0, 0);
-                    entity.Rotation = 0.0;
-                    entity.Scale = new Vector3D(1, 1, 1);
+                    ResetSolidTransform(entity);
                 }
                 var solidEntity = new DwgModel3DElement();
                 var solidElement = new StaticSolidElement(name, "SmdxElement", new ImProperties(), resultShell, new ImDocuments());
@@ -936,22 +892,21 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Intersection(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var elements = JsonUtils.RequireStringArray(args, "elements");
             if (elements.Length < 2)
-                throw new InvalidOperationException("Количество элементов 'elements' должно быть не менее 2.");
+                throw new BadRequestException("Количество элементов 'elements' должно быть не менее 2.");
             var initialEntities = new List<DwgModel3DElement>();
             var shells = new List<Cad.Foundation.Brep.Shell>();
             foreach (var elementGuidStr in elements)
             {
-                var elementGuid = Guid.Parse(elementGuidStr);
-                var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, elementGuid);
-                if (solidEntity == null)
-                    throw new InvalidOperationException($"Не удалось найти тело по указанному guid \"{elementGuidStr}\".");
+                var elementGuid = DwgUtils.ParseGuid(elementGuidStr);
+                var (solidEntity, _) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, elementGuid);
+                var solidElement = DwgUtils.RequireSolidElement(solidEntity, elementGuidStr);
                 initialEntities.Add(solidEntity);
-                shells.Add(solidEntity.Element.GetBrep());
+                shells.Add(solidElement.GetBrep());
             }
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
@@ -975,11 +930,7 @@ namespace Topomatic.ToolBridge.Tools
                 for (int i = 0; i < initialEntities.Count; i++)
                 {
                     var entity = initialEntities[i];
-
-                    // solid entity не допускает трансформаций
-                    entity.Position = new Vector3D(0, 0, 0);
-                    entity.Rotation = 0.0;
-                    entity.Scale = new Vector3D(1, 1, 1);
+                    ResetSolidTransform(entity);
                 }
                 var solidEntity = new DwgModel3DElement();
                 var solidElement = new StaticSolidElement(name, "SmdxElement", new ImProperties(), resultShell, new ImDocuments());
@@ -1034,22 +985,21 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Difference(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.GetDrawing(CadView) ?? throw new InvalidOperationException("Не удалось получить активный чертеж.");
-            var sessionStorage = SessionStorage ?? throw new InvalidOperationException("Cannot get session storage.");
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
             var name = JsonUtils.RequireString(args, "name");
             var elements = JsonUtils.RequireStringArray(args, "elements");
             if (elements.Length < 2)
-                throw new InvalidOperationException("Количество элементов 'elements' должно быть не менее 2.");
+                throw new BadRequestException("Количество элементов 'elements' должно быть не менее 2.");
             var initialEntities = new List<DwgModel3DElement>();
             var shells = new List<Cad.Foundation.Brep.Shell>();
             foreach (var elementGuidStr in elements)
             {
-                var elementGuid = Guid.Parse(elementGuidStr);
-                var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, elementGuid);
-                if (solidEntity == null)
-                    throw new InvalidOperationException($"Не удалось найти тело по указанному guid \"{elementGuidStr}\".");
+                var elementGuid = DwgUtils.ParseGuid(elementGuidStr);
+                var (solidEntity, _) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, elementGuid);
+                var solidElement = DwgUtils.RequireSolidElement(solidEntity, elementGuidStr);
                 initialEntities.Add(solidEntity);
-                shells.Add(solidEntity.Element.GetBrep());
+                shells.Add(solidElement.GetBrep());
             }
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
@@ -1073,11 +1023,7 @@ namespace Topomatic.ToolBridge.Tools
                 for (int i = 0; i < initialEntities.Count; i++)
                 {
                     var entity = initialEntities[i];
-
-                    // solid entity не допускает трансформаций
-                    entity.Position = new Vector3D(0, 0, 0);
-                    entity.Rotation = 0.0;
-                    entity.Scale = new Vector3D(1, 1, 1);
+                    ResetSolidTransform(entity);
                 }
                 var solidEntity = new DwgModel3DElement();
                 var solidElement = new StaticSolidElement(name, "SmdxElement", new ImProperties(), resultShell, new ImDocuments());
@@ -1102,6 +1048,14 @@ namespace Topomatic.ToolBridge.Tools
             {
                 drawing.EndUpdate();
             }
+        }
+
+        private static void ResetSolidTransform(DwgModel3DElement entity)
+        {
+            // Геометрия StaticSolidElement хранится в мировых координатах и не допускает трансформаций сущности.
+            entity.Position = new Vector3D(0, 0, 0);
+            entity.Rotation = 0.0;
+            entity.Scale = Vector3D.One;
         }
     }
 }

@@ -19,6 +19,43 @@ namespace Topomatic.ToolBridge
     [Obfuscation(Exclude = true, ApplyToMembers = true)]
     public static class DwgUtils
     {
+        public static CadView RequireCadView(CadView cadView)
+        {
+            return cadView ??
+                throw new PreconditionFailedException("Не удалось найти активный видовой экран.");
+        }
+
+        public static Drawing RequireDrawing(CadView cadView)
+        {
+            return GetDrawing(cadView) ??
+                throw new PreconditionFailedException("Не удалось получить активный чертеж.");
+        }
+
+        public static ObjectStorage RequireSessionStorage(ObjectStorage sessionStorage)
+        {
+            return sessionStorage ??
+                throw new InvalidOperationException("Хранилище текущего сеанса недоступно.");
+        }
+
+        public static Guid ParseGuid(string value)
+        {
+            if (Guid.TryParse(value, out var guid))
+                return guid;
+            throw new BadRequestException($"Некорректный guid \"{value}\".");
+        }
+
+        public static StaticSolidElement RequireSolidElement(DwgModel3DElement entity, string guid)
+        {
+            return entity?.Element as StaticSolidElement ??
+                throw new PreconditionFailedException($"Не удалось найти твердое тело по указанному guid \"{guid}\".");
+        }
+
+        public static ConstructedModel3dElement RequireTlcElement(DwgModel3DElement entity, string guid)
+        {
+            return entity?.Element as ConstructedModel3dElement ??
+                throw new PreconditionFailedException($"Не удалось найти Tlc-модель по указанному guid \"{guid}\".");
+        }
+
         public static Drawing GetDrawing(CadView cadView)
         {
             if (cadView == null)
@@ -36,13 +73,16 @@ namespace Topomatic.ToolBridge
             string name = null;
             if (sessionStorage.HasObject(guid))
             {
-                entity = (T)sessionStorage.GetObject(guid);
-                if (entity.Drawing != drawing)
-                    throw new InvalidOperationException($"Элемент (сущность) с guid \"{guidStr}\" не находится в активном чертеже.");
-                if (entity.HasExtensionDictionary)
+                entity = sessionStorage.GetObject(guid) as T;
+                if (entity != null)
                 {
-                    var extDict = entity.GetExtensionDictionary();
-                    name = extDict.GetString("name", null);
+                    if (entity.Drawing != drawing)
+                        throw new PreconditionFailedException($"Элемент (сущность) с guid \"{guidStr}\" не находится в активном чертеже.");
+                    if (entity.HasExtensionDictionary)
+                    {
+                        var extDict = entity.GetExtensionDictionary();
+                        name = extDict.GetString("name", null);
+                    }
                 }
             }
             else
@@ -570,9 +610,9 @@ namespace Topomatic.ToolBridge
             if (layerName == null)
                 return;
             if (string.IsNullOrWhiteSpace(layerName))
-                throw new InvalidOperationException("Имя слоя сущности (layerName) не может быть пустым.");
+                throw new BadRequestException("Имя слоя сущности (layerName) не может быть пустым.");
             if (!drawing.Layers.IsExists(layerName))
-                throw new InvalidOperationException($"Слой с именем {layerName} не содержится в активном чертеже.");
+                throw new PreconditionFailedException($"Слой с именем {layerName} не содержится в активном чертеже.");
             entity.Layer = drawing.Layers[layerName] ?? throw new InvalidOperationException($"Не удалось получить слой с именем {layerName}.");
         }
 
@@ -600,14 +640,14 @@ namespace Topomatic.ToolBridge
             else if (string.Equals(colorMode, "Indexed", StringComparison.OrdinalIgnoreCase))
             {
                 if (colorIndex == null)
-                    throw new InvalidOperationException("Для режима цвета Indexed необходимо передать colorIndex.");
+                    throw new BadRequestException("Для режима цвета Indexed необходимо передать colorIndex.");
                 if (colorIndex.Value < 0)
-                    throw new InvalidOperationException("Индекс цвета сущности (colorIndex) не может быть отрицательным.");
+                    throw new BadRequestException("Индекс цвета сущности (colorIndex) не может быть отрицательным.");
                 entity.Color = new CadColor(colorIndex.Value);
             }
             else
             {
-                throw new InvalidOperationException("Неизвестное значение colorMode. Допустимые значения: Indexed, ByLayer, ByBlock.");
+                throw new BadRequestException("Неизвестное значение colorMode. Допустимые значения: Indexed, ByLayer, ByBlock.");
             }
             if (entity is DwgModel3DElement solidEntity && solidEntity.Element is StaticSolidElement solidElement)
             {
@@ -625,33 +665,37 @@ namespace Topomatic.ToolBridge
 
         public static AcPatternType ParsePatternType(string value)
         {
-            if (Enum.TryParse(value, true, out AcPatternType patternType))
+            if (Enum.TryParse(value, true, out AcPatternType patternType)
+                && Enum.IsDefined(typeof(AcPatternType), patternType))
                 return patternType;
-            throw new InvalidOperationException(
+            throw new BadRequestException(
                 $"Неизвестное значение patternType \"{value}\". Допустимые значения: {string.Join(", ", Enum.GetNames(typeof(AcPatternType)))}.");
         }
 
         public static AcHatchStyle ParseHatchStyle(string value)
         {
-            if (Enum.TryParse(value, true, out AcHatchStyle hatchStyle))
+            if (Enum.TryParse(value, true, out AcHatchStyle hatchStyle)
+                && Enum.IsDefined(typeof(AcHatchStyle), hatchStyle))
                 return hatchStyle;
-            throw new InvalidOperationException(
+            throw new BadRequestException(
                 $"Неизвестное значение hatchStyle \"{value}\". Допустимые значения: {string.Join(", ", Enum.GetNames(typeof(AcHatchStyle)))}.");
         }
 
         public static TextAlignment ParseTextAlignment(string value)
         {
-            if (Enum.TryParse(value, true, out TextAlignment alignment))
+            if (Enum.TryParse(value, true, out TextAlignment alignment)
+                && Enum.IsDefined(typeof(TextAlignment), alignment))
                 return alignment;
-            throw new InvalidOperationException(
+            throw new BadRequestException(
                 $"Неизвестное значение justify \"{value}\". Допустимые значения: {string.Join(", ", Enum.GetNames(typeof(TextAlignment)))}.");
         }
 
         public static AttachmentPoint ParseAttachmentPoint(string value)
         {
-            if (Enum.TryParse(value, true, out AttachmentPoint attachmentPoint))
+            if (Enum.TryParse(value, true, out AttachmentPoint attachmentPoint)
+                && Enum.IsDefined(typeof(AttachmentPoint), attachmentPoint))
                 return attachmentPoint;
-            throw new InvalidOperationException(
+            throw new BadRequestException(
                 $"Неизвестное значение attachmentPoint \"{value}\". Допустимые значения: {string.Join(", ", Enum.GetNames(typeof(AttachmentPoint)))}.");
         }
     }
