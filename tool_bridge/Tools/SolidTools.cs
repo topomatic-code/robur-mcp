@@ -11,7 +11,8 @@ namespace Topomatic.ToolBridge.Tools
     {
         [ToolDef(
             Name = "dwg_solid_create",
-            Description = "[ЧЕРТЕЖ] Создает пустое твердое тело и вставляет его в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает пустое твердое тело и вставляет его в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -72,7 +73,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_add_faces",
-            Description = "[ЧЕРТЕЖ] Добавляет набор граней в твердое тело.",
+            Domain = ToolDomains.Drawing,
+            Description = "Добавляет набор граней в твердое тело.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -180,7 +182,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_get_faces",
-            Description = "[ЧЕРТЕЖ] Возвращает грани твердого тела из пространства активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Возвращает грани твердого тела из пространства активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -230,7 +233,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_section",
-            Description = "[ЧЕРТЕЖ] Возвращает контуры сечения твердого тела плоскостью.",
+            Domain = ToolDomains.Drawing,
+            Description = "Возвращает контуры сечения твердого тела плоскостью.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -348,7 +352,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_remove_faces",
-            Description = "[ЧЕРТЕЖ] Удаляет грани из твердого тела по индексам граней.",
+            Domain = ToolDomains.Drawing,
+            Description = "Удаляет грани из твердого тела по индексам граней.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -428,7 +433,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_transform",
-            Description = "[ЧЕРТЕЖ] Выполняет трансформацию набора твердых тел: перенос, поворот или масштабирование. Может обновлять исходные тела или создавать трансформированные копии.",
+            Domain = ToolDomains.Drawing,
+            Description = "Выполняет трансформацию набора твердых тел: перенос, поворот или масштабирование. Может обновлять исходные тела или создавать трансформированные копии.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -601,7 +607,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_sweep",
-            Description = "[ЧЕРТЕЖ] Создает твердое тело путем вытягивания 2d сечения вдоль 3d кривой.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает твердое тело путем вытягивания 2d сечения вдоль 3d кривой.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -773,7 +780,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_union",
-            Description = "[ЧЕРТЕЖ] Выполняет операцию объединения твердых тел и вставляет результирующее тело в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Выполняет операцию объединения твердых тел и вставляет результирующее тело в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {            
@@ -866,7 +874,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_intersection",
-            Description = "[ЧЕРТЕЖ] Выполняет операцию пересечения твердых тел и вставляет результирующее тело в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Выполняет операцию пересечения твердых тел и вставляет результирующее тело в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {            
@@ -959,7 +968,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_solid_difference",
-            Description = "[ЧЕРТЕЖ] Выполняет операцию вычитания твердых тел и вставляет результирующее тело в пространство активного чертежа. Из первого переданного тела вычитаются все остальные.",
+            Domain = ToolDomains.Drawing,
+            Description = "Выполняет операцию вычитания твердых тел и вставляет результирующее тело в пространство активного чертежа. Из первого переданного тела вычитаются все остальные.",
             InputSchema = @"{
               'type': 'object',
               'properties': {            

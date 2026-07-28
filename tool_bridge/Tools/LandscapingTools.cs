@@ -10,7 +10,8 @@ namespace Topomatic.ToolBridge.Tools
     {
         [ToolDef(
             Name = "landscp_get_lib_plant_elements",
-            Description = "[ЧЕРТЕЖ, ОЗЕЛЕНЕНИЕ] Возвращает элементы растений для посадки из библиотеки Bim-элементов.",
+            Domain = ToolDomains.Landscaping,
+            Description = "Возвращает элементы растений для посадки из библиотеки Bim-элементов.",
             InputSchema = @"{
               'type': 'object',
               'properties': {},
@@ -45,7 +46,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "landscp_get_plant_element_info",
-            Description = "[ЧЕРТЕЖ, ОЗЕЛЕНЕНИЕ] Возвращает подробную информацию об элементе растения для посадки из библиотеки Bim-элементов.",
+            Domain = ToolDomains.Landscaping,
+            Description = "Возвращает подробную информацию об элементе растения для посадки из библиотеки Bim-элементов.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -71,7 +73,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "landscp_create_point_plant",
-            Description = "[ЧЕРТЕЖ, ОЗЕЛЕНЕНИЕ] Создает точечный элемент посадки и добавляет его в пространство активного чертежа.",
+            Domain = ToolDomains.Landscaping,
+            Description = "Создает точечный элемент посадки и добавляет его в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {

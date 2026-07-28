@@ -11,7 +11,8 @@ namespace Topomatic.ToolBridge.Tools
     {
         [ToolDef(
             Name = "dwg_get_active_drawing_info",
-            Description = "[ЧЕРТЕЖ] Возвращает информацию об активном чертеже Robur.",
+            Domain = ToolDomains.Drawing,
+            Description = "Возвращает информацию об активном чертеже Robur.",
             InputSchema = @"{
               'type': 'object',
               'properties': {},
@@ -48,7 +49,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_add_layer",
-            Description = "[ЧЕРТЕЖ] Добавляет новый слой в активный чертеж Robur.",
+            Domain = ToolDomains.Drawing,
+            Description = "Добавляет новый слой в активный чертеж Robur.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -106,7 +108,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_update_layer",
-            Description = "[ЧЕРТЕЖ] Обновляет слой в активном чертеже Robur. Обновляет только переданные свойства, оставляя остальные без изменений.",
+            Domain = ToolDomains.Drawing,
+            Description = "Обновляет слой в активном чертеже Robur. Обновляет только переданные свойства, оставляя остальные без изменений.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -172,7 +175,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_remove_layer",
-            Description = "[ЧЕРТЕЖ] Удаляет слой из активного чертежа Robur.",
+            Domain = ToolDomains.Drawing,
+            Description = "Удаляет слой из активного чертежа Robur.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -221,7 +225,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_set_active_layer",
-            Description = "[ЧЕРТЕЖ] Устанавливает активный слой в активном чертеже Robur.",
+            Domain = ToolDomains.Drawing,
+            Description = "Устанавливает активный слой в активном чертеже Robur.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -273,7 +278,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_set_entities_layer",
-            Description = "[ЧЕРТЕЖ] Устанавливает слой для набора элементов (сущностей) из пространства активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Устанавливает слой для набора элементов (сущностей) из пространства активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -351,7 +357,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_set_entities_color",
-            Description = "[ЧЕРТЕЖ] Устанавливает цвет для набора элементов (сущностей) из пространства активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Устанавливает цвет для набора элементов (сущностей) из пространства активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -437,7 +444,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_get_entities_info",
-            Description = "[ЧЕРТЕЖ] Возвращает информацию о диапазоне элементов (сущностей) из пространства активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Возвращает информацию о диапазоне элементов (сущностей) из пространства активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -503,7 +511,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_get_active_space_entity",
-            Description = "[ЧЕРТЕЖ] Возвращает данные и структуру элемента (сущности) из пространства активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Возвращает данные и структуру элемента (сущности) из пространства активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -533,7 +542,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_create_polyline",
-            Description = "[ЧЕРТЕЖ] Создает 2d полилинию и добавляет ее в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает 2d полилинию и добавляет ее в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -616,7 +626,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_update_polyline",
-            Description = "[ЧЕРТЕЖ] Обновляет 2d полилинию в пространстве активного чертежа. Обновляет только переданные свойства, оставляя остальные без изменений.",
+            Domain = ToolDomains.Drawing,
+            Description = "Обновляет 2d полилинию в пространстве активного чертежа. Обновляет только переданные свойства, оставляя остальные без изменений.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -713,7 +724,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_create_table",
-            Description = "[ЧЕРТЕЖ] Создает таблицу и добавляет ее в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает таблицу и добавляет ее в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -825,7 +837,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_update_table",
-            Description = "[ЧЕРТЕЖ] Обновляет таблицу в пространстве активного чертежа. Обновляет только переданные свойства, оставляя остальные без изменений.",
+            Domain = ToolDomains.Drawing,
+            Description = "Обновляет таблицу в пространстве активного чертежа. Обновляет только переданные свойства, оставляя остальные без изменений.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -990,7 +1003,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_create_mtext",
-            Description = "[ЧЕРТЕЖ] Создает многострочный текст (мультитекст, type = dwg_mtext) и добавляет его в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает многострочный текст (мультитекст, type = dwg_mtext) и добавляет его в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1083,7 +1097,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_update_mtext",
-            Description = "[ЧЕРТЕЖ] Обновляет многострочный текст (мультитекст, type = dwg_mtext) в пространстве активного чертежа. Обновляет только переданные свойства.",
+            Domain = ToolDomains.Drawing,
+            Description = "Обновляет многострочный текст (мультитекст, type = dwg_mtext) в пространстве активного чертежа. Обновляет только переданные свойства.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1191,7 +1206,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_create_text",
-            Description = "[ЧЕРТЕЖ] Создает текст (type = dwg_text) и добавляет его в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает текст (type = dwg_text) и добавляет его в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1301,7 +1317,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_update_text",
-            Description = "[ЧЕРТЕЖ] Обновляет текст (type = dwg_text) в пространстве активного чертежа. Обновляет только переданные свойства.",
+            Domain = ToolDomains.Drawing,
+            Description = "Обновляет текст (type = dwg_text) в пространстве активного чертежа. Обновляет только переданные свойства.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1426,7 +1443,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_create_circle",
-            Description = "[ЧЕРТЕЖ] Создает окружность и добавляет ее в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает окружность и добавляет ее в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1505,7 +1523,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_update_circle",
-            Description = "[ЧЕРТЕЖ] Обновляет окружность в пространстве активного чертежа. Обновляет только переданные свойства.",
+            Domain = ToolDomains.Drawing,
+            Description = "Обновляет окружность в пространстве активного чертежа. Обновляет только переданные свойства.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1597,7 +1616,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_create_line",
-            Description = "[ЧЕРТЕЖ] Создает линию и добавляет ее в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает линию и добавляет ее в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1685,7 +1705,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_update_line",
-            Description = "[ЧЕРТЕЖ] Обновляет линию в пространстве активного чертежа. Обновляет только переданные свойства.",
+            Domain = ToolDomains.Drawing,
+            Description = "Обновляет линию в пространстве активного чертежа. Обновляет только переданные свойства.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1786,7 +1807,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_create_hatch",
-            Description = "[ЧЕРТЕЖ] Создает штриховку и добавляет ее в пространство активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает штриховку и добавляет ее в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -1902,7 +1924,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_update_hatch",
-            Description = "[ЧЕРТЕЖ] Обновляет штриховку в пространстве активного чертежа. Обновляет только переданные свойства.",
+            Domain = ToolDomains.Drawing,
+            Description = "Обновляет штриховку в пространстве активного чертежа. Обновляет только переданные свойства.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -2070,7 +2093,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_get_hatch_patterns",
-            Description = "[ЧЕРТЕЖ] Возвращает список доступных паттернов штриховок.",
+            Domain = ToolDomains.Drawing,
+            Description = "Возвращает список доступных паттернов штриховок.",
             InputSchema = @"{
               'type': 'object',
               'properties': {},
@@ -2115,7 +2139,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_remove_active_space_entity",
-            Description = "[ЧЕРТЕЖ] Удаляет элемент из пространства активного чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Удаляет элемент из пространства активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {

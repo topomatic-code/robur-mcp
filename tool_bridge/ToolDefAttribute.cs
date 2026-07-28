@@ -14,6 +14,11 @@ namespace Topomatic.ToolBridge
         public string Name { get; set; }
 
         /// <summary>
+        /// Предметная область tool.
+        /// </summary>
+        public string Domain { get; set; }
+
+        /// <summary>
         /// Описание tool.
         /// </summary>
         public string Description { get; set; }
@@ -40,8 +45,12 @@ namespace Topomatic.ToolBridge
 
         internal ToolDefinition GetDefinition()
         {
+            if (string.IsNullOrWhiteSpace(Domain))
+                throw new InvalidOperationException($"Для tool \"{Name}\" не указан Domain.");
+
             return new ToolDefinition(
                 Name,
+                Domain,
                 Description,
                 JObject.Parse(InputSchema),
                 new ToolAnnotations(ReadOnlyHint, DestructiveHint, IdempotentHint)

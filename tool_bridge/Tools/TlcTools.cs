@@ -13,7 +13,8 @@ namespace Topomatic.ToolBridge.Tools
     {
         [ToolDef(
             Name = "tlc_model_create",
-            Description = "[ЧЕРТЕЖ, TLC] Создает Tlc-модель по скрипту и вставляет ее в пространство активного чертежа.",
+            Domain = ToolDomains.Tlc,
+            Description = "Создает Tlc-модель по скрипту и вставляет ее в пространство активного чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -139,7 +140,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "tlc_model_update",
-            Description = "[ЧЕРТЕЖ, TLC] Обновляет Tlc-модель в пространстве активного чертежа. Обновляет только переданные свойства, оставляя остальные без изменений.",
+            Domain = ToolDomains.Tlc,
+            Description = "Обновляет Tlc-модель в пространстве активного чертежа. Обновляет только переданные свойства, оставляя остальные без изменений.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -287,7 +289,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "tlc_script_execute",
-            Description = "[TLC] Выполняет Tlc-скрипт для проверки ошибок построения модели.",
+            Domain = ToolDomains.Tlc,
+            Description = "Выполняет Tlc-скрипт для проверки ошибок построения модели.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -338,7 +341,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "tlc_model_get_script",
-            Description = "[ЧЕРТЕЖ, TLC] Возвращает Tlc-скрипт из Tlc-модели, вставленной в активный чертеж.",
+            Domain = ToolDomains.Tlc,
+            Description = "Возвращает Tlc-скрипт из Tlc-модели, вставленной в активный чертеж.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -378,7 +382,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "tlc_get_parameter_schema",
-            Description = "[ЧЕРТЕЖ, TLC] Возвращает схему параметров Tlc-модели из Tlc-скрипта или из модели, вставленной в активный чертеж.",
+            Domain = ToolDomains.Tlc,
+            Description = "Возвращает схему параметров Tlc-модели из Tlc-скрипта или из модели, вставленной в активный чертеж.",
             InputSchema = @"{
               'type': 'object',
               'properties': {

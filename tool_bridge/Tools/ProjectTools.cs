@@ -10,7 +10,8 @@ namespace Topomatic.ToolBridge.Tools
     {
         [ToolDef(
             Name = "project_get_active",
-            Description = "[ПРОЕКТ] Возвращает данные и структуру активного проекта Robur.",
+            Domain = ToolDomains.Project,
+            Description = "Возвращает данные и структуру активного проекта Robur.",
             InputSchema = @"{
               'type': 'object',
               'properties': {},
@@ -50,7 +51,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "project_delete_item",
-            Description = "[ПРОЕКТ] Удаляет элемент из проекта (а также все вложенные элементы).",
+            Domain = ToolDomains.Project,
+            Description = "Удаляет элемент из проекта (а также все вложенные элементы).",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -92,7 +94,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "project_create_folder",
-            Description = "[ПРОЕКТ] Создает папку в структуре проекта.",
+            Domain = ToolDomains.Project,
+            Description = "Создает папку в структуре проекта.",
             InputSchema = @"{
               'type': 'object',
               'properties': {

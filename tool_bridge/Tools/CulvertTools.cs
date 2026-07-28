@@ -14,7 +14,8 @@ namespace Topomatic.ToolBridge.Tools
     {
         [ToolDef(
             Name = "clv_get_parameters",
-            Description = "[ТРУБЫ] Возвращает параметры конструкции водопропускной трубы. В структуре активного проекта элемент должен являться трубой (type == culvert).",
+            Domain = ToolDomains.Culverts,
+            Description = "Возвращает параметры конструкции водопропускной трубы. В структуре активного проекта элемент должен являться трубой (type == culvert).",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -71,7 +72,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "clv_get_volumes",
-            Description = "[ТРУБЫ] Возвращает объемы работ по водопропускной трубе. В структуре активного проекта элемент должен являться трубой (type == culvert).",
+            Domain = ToolDomains.Culverts,
+            Description = "Возвращает объемы работ по водопропускной трубе. В структуре активного проекта элемент должен являться трубой (type == culvert).",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -109,7 +111,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "clv_get_specification",
-            Description = "[ТРУБЫ] Возвращает спецификацию элементов водопропускной трубы. В структуре активного проекта элемент должен являться трубой (type == culvert).",
+            Domain = ToolDomains.Culverts,
+            Description = "Возвращает спецификацию элементов водопропускной трубы. В структуре активного проекта элемент должен являться трубой (type == culvert).",
             InputSchema = @"{
               'type': 'object',
               'properties': {

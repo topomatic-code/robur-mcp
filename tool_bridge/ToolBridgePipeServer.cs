@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.IO.Pipes;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -304,6 +305,8 @@ namespace Topomatic.ToolBridge
                     return BridgeResponse.OK(request.Id, new
                     {
                         tools = m_ToolManager.GetTools()
+                            .Select(CreatePipeToolDefinition)
+                            .ToArray()
                     });
                 case "call_tool":
                     var toolName = "<missing>";
@@ -315,6 +318,18 @@ namespace Topomatic.ToolBridge
                     m_Logger.Log("execute -> unknown method");
                     return BridgeResponse.Fail(request.Id, ErrorCodes.BadRequest, "Unknown method: " + request.Method, null);
             }
+        }
+
+        private static object CreatePipeToolDefinition(ToolDefinition tool)
+        {
+            return new
+            {
+                name = tool.Name,
+                domain = tool.Domain,
+                description = $"[{tool.Domain}] {tool.Description}",
+                inputSchema = tool.InputSchema,
+                annotations = tool.Annotations
+            };
         }
     }
 }

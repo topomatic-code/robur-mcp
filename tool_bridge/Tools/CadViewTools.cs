@@ -10,7 +10,8 @@ namespace Topomatic.ToolBridge.Tools
     {
         [ToolDef(
             Name = "cad_view_get_point",
-            Description = "[ВИДОВОЙ ЭКРАН] Запрашивает у пользователя ввод точки при помощи курсора на текущем видовом экране (CadView). Возвращает точку в координатах пространства текущего вида активной модели.",
+            Domain = ToolDomains.CadView,
+            Description = "Запрашивает у пользователя ввод точки при помощи курсора на текущем видовом экране (CadView). Возвращает точку в координатах пространства текущего вида активной модели.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -44,7 +45,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "cad_view_get_polygon",
-            Description = "[ВИДОВОЙ ЭКРАН] Запрашивает у пользователя ввод контура полилинии при помощи курсора на текущем видовом экране (CadView). Возвращает контур полилинии в координатах пространства текущего вида активной модели.",
+            Domain = ToolDomains.CadView,
+            Description = "Запрашивает у пользователя ввод контура полилинии при помощи курсора на текущем видовом экране (CadView). Возвращает контур полилинии в координатах пространства текущего вида активной модели.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -139,7 +141,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "cad_view_zoom",
-            Description = "[ВИДОВОЙ ЭКРАН] Масштабирует и переносит видовой экран так, чтобы показать переданную область.",
+            Domain = ToolDomains.CadView,
+            Description = "Масштабирует и переносит видовой экран так, чтобы показать переданную область.",
             InputSchema = @"{
               'type': 'object',
               'properties': {

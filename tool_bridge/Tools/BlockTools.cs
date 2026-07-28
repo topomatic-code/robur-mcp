@@ -11,7 +11,8 @@ namespace Topomatic.ToolBridge.Tools
     {
         [ToolDef(
             Name = "dwg_block_create",
-            Description = "[ЧЕРТЕЖ] Создает блок в таблице блоков активного чертежа Robur из элементов чертежа.",
+            Domain = ToolDomains.Drawing,
+            Description = "Создает блок в таблице блоков активного чертежа Robur из элементов чертежа.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -76,7 +77,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_block_insert",
-            Description = "[ЧЕРТЕЖ] Вставляет блок в пространство активного чертежа Robur.",
+            Domain = ToolDomains.Drawing,
+            Description = "Вставляет блок в пространство активного чертежа Robur.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -186,7 +188,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_block_explode",
-            Description = "[ЧЕРТЕЖ] Взрывает вставку блока: удаляет вставку и добавляет в пространство активного чертежа копии сущностей блока с учетом положения, поворота и масштаба вставки.",
+            Domain = ToolDomains.Drawing,
+            Description = "Взрывает вставку блока: удаляет вставку и добавляет в пространство активного чертежа копии сущностей блока с учетом положения, поворота и масштаба вставки.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -273,7 +276,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_block_remove",
-            Description = "[ЧЕРТЕЖ] Удаляет блок из таблицы блоков активного чертежа Robur.",
+            Domain = ToolDomains.Drawing,
+            Description = "Удаляет блок из таблицы блоков активного чертежа Robur.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
@@ -320,7 +324,8 @@ namespace Topomatic.ToolBridge.Tools
 
         [ToolDef(
             Name = "dwg_block_list",
-            Description = "[ЧЕРТЕЖ] Возвращает список блоков из таблицы блоков активного чертежа Robur.",
+            Domain = ToolDomains.Drawing,
+            Description = "Возвращает список блоков из таблицы блоков активного чертежа Robur.",
             InputSchema = @"{
               'type': 'object',
               'properties': {},
