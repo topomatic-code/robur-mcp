@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
+using Topomatic.ToolBridge.Settings;
 
 namespace Topomatic.ToolBridge
 {
@@ -16,7 +17,7 @@ namespace Topomatic.ToolBridge
     /// <para>
     /// Для Job Object задано правило <c>KILL_ON_JOB_CLOSE</c>: когда Robur завершает
     /// работу и закрывает владеющий дескриптор, Windows автоматически завершает
-    /// MCP-сервер и все созданные им дочерние процессы. Благодаря этому порт 8000
+    /// MCP-сервер и все созданные им дочерние процессы. Благодаря этому занимаемый порт
     /// освобождается даже без явного вызова команды <c>mcp_server_shutdown</c>.
     /// </para>
     /// <para>
@@ -85,13 +86,16 @@ namespace Topomatic.ToolBridge
                 DisposeJob(m_LifetimeJob);
                 m_LifetimeJob = null;
 
-                process = CreateProcess(executablePath);
-                process.Exited += OnMcpServerProcessExited;
+                process = CreateProcess(executablePath, McpSettings.Host, McpSettings.Port);
+                AttachProcessHandlers(process);
 
                 try
                 {
                     if (!process.Start())
                         throw new InvalidOperationException("Process.Start returned false.");
+
+                    process.BeginOutputReadLine();
+                    process.BeginErrorReadLine();
 
                     // Пока удерживается блокировка, обработчик Exited не сможет очистить
                     // процесс между его запуском и передачей во владение Job Object.
@@ -142,16 +146,19 @@ namespace Topomatic.ToolBridge
             StopProcess(process, lifetimeJob);
         }
 
-        private static Process CreateProcess(string executablePath)
+        private static Process CreateProcess(string executablePath, string host, string port)
         {
             return new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = executablePath,
+                    Arguments = $"--host={host} --port={port}",
                     WorkingDirectory = Path.GetDirectoryName(executablePath),
                     UseShellExecute = false,
-                    CreateNoWindow = true
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
                 },
                 EnableRaisingEvents = true
             };
@@ -233,8 +240,49 @@ namespace Topomatic.ToolBridge
 
             var exitCode = TryGetExitCode(process);
             DisposeJob(lifetimeJob);
-            process.Dispose();
+            WaitForRedirectedOutput(process);
+            DisposeProcess(process);
             m_Logger.PublicWarning($"MCP server exited with code {exitCode}.");
+        }
+
+        private void OnMcpServerDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            WriteMcpServerOutput(e.Data);
+        }
+
+        private void AttachProcessHandlers(Process process)
+        {
+            process.Exited += OnMcpServerProcessExited;
+            process.OutputDataReceived += OnMcpServerDataReceived;
+            process.ErrorDataReceived += OnMcpServerDataReceived;
+        }
+
+        private void DetachProcessHandlers(Process process)
+        {
+            process.Exited -= OnMcpServerProcessExited;
+            process.OutputDataReceived -= OnMcpServerDataReceived;
+            process.ErrorDataReceived -= OnMcpServerDataReceived;
+        }
+
+        private void WriteMcpServerOutput(string message)
+        {
+            if (string.IsNullOrWhiteSpace(message))
+                return;
+
+            var prefixedMessage = "[MCP server] " + message;
+            if (message.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase) ||
+                message.StartsWith("CRITICAL:", StringComparison.OrdinalIgnoreCase))
+            {
+                m_Logger.SystemError(prefixedMessage);
+            }
+            else if (message.StartsWith("WARNING:", StringComparison.OrdinalIgnoreCase))
+            {
+                m_Logger.SystemWarning(prefixedMessage);
+            }
+            else
+            {
+                m_Logger.SystemInfo(prefixedMessage);
+            }
         }
 
         private void StopProcess(Process process, SafeJobHandle lifetimeJob)
@@ -250,13 +298,31 @@ namespace Topomatic.ToolBridge
                     process.WaitForExit(ShutdownTimeoutMilliseconds);
                 }
             }
+            catch (InvalidOperationException)
+            {
+                // Process.Start завершился ошибкой или процесс уже был освобождён.
+            }
             catch (Exception ex)
             {
                 m_Logger.PublicError("Failed to stop MCP server process: " + ex.Message);
             }
             finally
             {
-                process.Dispose();
+                WaitForRedirectedOutput(process);
+                DisposeProcess(process);
+            }
+        }
+
+        private static void WaitForRedirectedOutput(Process process)
+        {
+            try
+            {
+                if (process.HasExited)
+                    process.WaitForExit();
+            }
+            catch (InvalidOperationException)
+            {
+                // Процесс не был запущен, поэтому перенаправленные потоки отсутствуют.
             }
         }
 
@@ -287,10 +353,13 @@ namespace Topomatic.ToolBridge
             }
         }
 
-        private static void DisposeProcess(Process process)
+        private void DisposeProcess(Process process)
         {
-            if (process != null)
-                process.Dispose();
+            if (process == null)
+                return;
+
+            DetachProcessHandlers(process);
+            process.Dispose();
         }
 
         private static void DisposeJob(SafeJobHandle job)

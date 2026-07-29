@@ -1,5 +1,7 @@
+import argparse
 import asyncio
 import contextlib
+import ipaddress
 import json
 import logging
 import uuid
@@ -29,8 +31,8 @@ from starlette.types import Scope, Receive, Send
 from tool_bridge_pipe_client import BridgeError, ToolBridgePipeClient
 
 PIPE_NAME = r"\\.\pipe\robur_tool_bridge"
-HOST = "127.0.0.1"
-PORT = 8000
+DEFAULT_HOST = "127.0.0.1"
+DEFAULT_PORT = 8000
 
 TOOL_ERROR_CODES: frozenset[str] = frozenset(
     {
@@ -235,5 +237,42 @@ app = Starlette(
     lifespan=lifespan,
 )
 
+
+def _port_number(value: str) -> int:
+    try:
+        port = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("port must be an integer") from exc
+    if not 1 <= port <= 65535:
+        raise argparse.ArgumentTypeError("port must be between 1 and 65535")
+    return port
+
+
+def _host_address(value: str) -> str:
+    try:
+        ipaddress.IPv4Address(value)
+    except ipaddress.AddressValueError as exc:
+        raise argparse.ArgumentTypeError("host must be a valid IPv4 address") from exc
+    return value
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Robur MCP HTTP server")
+    parser.add_argument(
+        "--host",
+        type=_host_address,
+        default=DEFAULT_HOST,
+        help="HTTP server IPv4 address",
+    )
+    parser.add_argument(
+        "--port",
+        type=_port_number,
+        default=DEFAULT_PORT,
+        help="HTTP server port",
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host=HOST, port=PORT)
+    args = _parse_args()
+    uvicorn.run(app, host=args.host, port=args.port, ws="none")
