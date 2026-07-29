@@ -45,9 +45,6 @@ namespace Topomatic.ToolBridge
 
         internal ToolDefinition GetDefinition()
         {
-            if (string.IsNullOrWhiteSpace(Domain))
-                throw new InvalidOperationException($"Для tool \"{Name}\" не указан Domain.");
-
             return new ToolDefinition(
                 Name,
                 Domain,

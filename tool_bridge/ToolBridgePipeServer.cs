@@ -364,11 +364,12 @@ namespace Topomatic.ToolBridge
 
         private static object CreatePipeToolDefinition(ToolDefinition tool)
         {
+            var domain = string.IsNullOrWhiteSpace(tool.Domain) ? "" : $"[{tool.Domain}] ";
             return new
             {
                 name = tool.Name,
                 domain = tool.Domain,
-                description = $"[{tool.Domain}] {tool.Description}",
+                description = domain + tool.Description,
                 inputSchema = tool.InputSchema,
                 annotations = tool.Annotations
             };
