@@ -14,7 +14,7 @@ using Topomatic.Visualization;
 using Topomatic.Visualization.Constructions;
 using Topomatic.Visualization.Runtime;
 
-namespace Topomatic.ToolBridge
+namespace Topomatic.ToolBridge.Utils
 {
     [Obfuscation(Exclude = true, ApplyToMembers = true)]
     public static class DwgUtils

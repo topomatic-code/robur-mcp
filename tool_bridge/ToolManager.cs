@@ -4,6 +4,7 @@ using System.Linq;
 using Topomatic.ApplicationPlatform;
 using Topomatic.Cad.View;
 using Topomatic.ToolBridge.Services;
+using Topomatic.ToolBridge.Utils;
 
 namespace Topomatic.ToolBridge
 {

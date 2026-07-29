@@ -4,7 +4,7 @@ using System.Reflection;
 using Topomatic.Cad.Foundation;
 using Topomatic.Visualization;
 
-namespace Topomatic.ToolBridge
+namespace Topomatic.ToolBridge.Utils
 {
     [Obfuscation(Exclude = true, ApplyToMembers = true)]
     public static class SmdxUtils

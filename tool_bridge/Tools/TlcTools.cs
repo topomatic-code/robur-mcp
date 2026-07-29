@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Topomatic.Cad.Foundation;
+using Topomatic.ToolBridge.Utils;
 using Topomatic.Visualization;
 using Topomatic.Visualization.Constructions;
 using Topomatic.Visualization.Runtime;

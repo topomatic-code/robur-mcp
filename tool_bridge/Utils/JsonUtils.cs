@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Reflection;
 using Topomatic.Cad.Foundation;
 
-namespace Topomatic.ToolBridge
+namespace Topomatic.ToolBridge.Utils
 {
     [Obfuscation(Exclude = true, ApplyToMembers = true)]
     public static class JsonUtils

@@ -125,13 +125,13 @@
     <Compile Include="BridgeError.cs" />
     <Compile Include="BridgeRequest.cs" />
     <Compile Include="BridgeResponse.cs" />
-    <Compile Include="DwgUtils.cs" />
+    <Compile Include="Utils\DwgUtils.cs" />
     <Compile Include="ErrorCodes.cs" />
-    <Compile Include="JsonUtils.cs" />
+    <Compile Include="Utils\JsonUtils.cs" />
     <Compile Include="Services\Models\ProjectNode.cs" />
     <Compile Include="Services\ObjectStorage.cs" />
     <Compile Include="Services\ProjectManager.cs" />
-    <Compile Include="SmdxUtils.cs" />
+    <Compile Include="Utils\SmdxUtils.cs" />
     <Compile Include="Tool.cs" />
     <Compile Include="ToolAnnotations.cs" />
     <Compile Include="ToolProvider.cs" />
