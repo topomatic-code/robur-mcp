@@ -7,6 +7,9 @@ using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Core;
 using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.Cad.View;
+using Topomatic.ToolBridge.Dialogs;
+using Topomatic.ToolBridge.Dialogs.Wrappers;
+using Topomatic.ToolBridge.Settings;
 using Topomatic.ToolBridge.Tools;
 
 namespace Topomatic.ToolBridge
@@ -15,6 +18,13 @@ namespace Topomatic.ToolBridge
     internal sealed class ToolBridgeModule : PluginInitializator
     {
         private const string SystemLogDirectoryPathTemplate = @"%UserAppDataPath%\Support\robur-mcp";
+
+        public override void Initialize(PluginFactory factory)
+        {
+            base.Initialize(factory);
+            if (McpSettings.AutoRun)
+                McpRun();
+        }
 
         [cmd("tool_bridge_log")]
         private void EnableSystemLogging()
@@ -85,6 +95,31 @@ namespace Topomatic.ToolBridge
         {
             ToolBridgeInit();
             McpServerRun();
+        }
+
+        [cmd("mcp_control_panel")]
+        private void McpControlPanel()
+        {
+            var runMcp = McpServerBootstrap.Instance.ServerRunning;
+            var settings = new McpSettingsWrapper(runMcp);
+            if (McpControlPanelDlg.Execute(settings, ref runMcp))
+            {
+                settings.SaveChanges();
+                if (runMcp)
+                {
+                    if (!ToolBridgeBootstrap.Instance.ServerRunning)
+                        ToolBridgeInit();
+                    if (!McpServerBootstrap.Instance.ServerRunning)
+                        McpServerRun();
+                }
+                else
+                {
+                    if (McpServerBootstrap.Instance.ServerRunning)
+                        McpServerShutdown();
+                    if (ToolBridgeBootstrap.Instance.ServerRunning)
+                        ToolBridgeShutdown();
+                }
+            }
         }
 
         [cmd("generate_tools")]
