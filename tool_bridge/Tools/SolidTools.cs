@@ -520,9 +520,7 @@ namespace Topomatic.ToolBridge.Tools
                             new ImDocuments()
                         );
                         copyEntity.Element = copyElement;
-
                         ResetSolidTransform(copyEntity);
-
                         drawing.ActiveSpace.Add(copyEntity);
                         DwgUtils.ApplyEntityLayer(drawing, copyEntity, solidInfo.entity.Layer?.Name);
                         DwgUtils.ApplyEntityColor(copyEntity, DwgUtils.GetColorMode(solidInfo.entity.Color), solidInfo.entity.Color.ColorIndex);
@@ -545,9 +543,7 @@ namespace Topomatic.ToolBridge.Tools
                         );
                         newSolidElement.Color = solidInfo.element.Color;
                         solidInfo.entity.Element = newSolidElement;
-
                         ResetSolidTransform(solidInfo.entity);
-
                         results.Add(DwgUtils.CreateSolidObj(solidInfo.entity, solidInfo.guidStr, solidInfo.name));
                     }
                 }

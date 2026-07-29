@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using Topomatic.ApplicationEnvironment;
 using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Core;
 using Topomatic.ApplicationPlatform.Plugins;
@@ -12,14 +14,22 @@ namespace Topomatic.ToolBridge
     [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
     internal sealed class ToolBridgeModule : PluginInitializator
     {
-        public ToolBridgeModule()
-        {
+        private const string SystemLogDirectoryPathTemplate = @"%UserAppDataPath%\Support\robur-mcp";
 
-        }
-
-        public override void Initialize(PluginFactory factory)
+        [cmd("tool_bridge_log")]
+        private void EnableSystemLogging()
         {
-            base.Initialize(factory);
+            try
+            {
+                var expandedDirectoryPath = ProcessEnvironment.Current.ExpandEnvironmentVariables(SystemLogDirectoryPathTemplate);
+                var directoryPath = Path.GetFullPath(expandedDirectoryPath);
+                ToolBridgeLogger.Instance.EnableSystemLogging(directoryPath);
+                ToolBridgeLogger.Instance.PublicInfo("System logging enabled. Log directory: " + directoryPath);
+            }
+            catch (Exception ex)
+            {
+                ToolBridgeLogger.Instance.PublicError("Failed to enable the Tool Bridge system log: " + ex.Message);
+            }
         }
 
         [cmd("tool_bridge_init")]

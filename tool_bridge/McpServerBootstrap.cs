@@ -1,9 +1,9 @@
+using Microsoft.Win32.SafeHandles;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-using Microsoft.Win32.SafeHandles;
 
 namespace Topomatic.ToolBridge
 {
@@ -64,7 +64,7 @@ namespace Topomatic.ToolBridge
             var executablePath = ResolveMcpServerExecutablePath();
             if (!File.Exists(executablePath))
             {
-                m_Logger.Log("MCP server executable was not found.");
+                m_Logger.PublicError("MCP server executable was not found.");
                 return;
             }
 
@@ -76,7 +76,7 @@ namespace Topomatic.ToolBridge
             {
                 if (IsRunning(m_McpServerProcess))
                 {
-                    m_Logger.Log("MCP server process is already running.");
+                    m_Logger.PublicWarning("MCP server process is already running.");
                     return;
                 }
 
@@ -113,11 +113,11 @@ namespace Topomatic.ToolBridge
                 // Не удалось полностью запустить сервер: завершаем уже созданный
                 // процесс, чтобы он не оказался отделён от жизненного цикла Robur.
                 StopProcess(process, null);
-                m_Logger.Log("Failed to start MCP server: " + startupError);
+                m_Logger.PublicError("Failed to start MCP server: " + startupError);
                 return;
             }
 
-            m_Logger.Log("MCP server started.");
+            m_Logger.PublicInfo("MCP server started.");
         }
 
         public void Shutdown()
@@ -234,7 +234,7 @@ namespace Topomatic.ToolBridge
             var exitCode = TryGetExitCode(process);
             DisposeJob(lifetimeJob);
             process.Dispose();
-            m_Logger.Log($"MCP server exited with code {exitCode}.");
+            m_Logger.PublicWarning($"MCP server exited with code {exitCode}.");
         }
 
         private void StopProcess(Process process, SafeJobHandle lifetimeJob)
@@ -252,7 +252,7 @@ namespace Topomatic.ToolBridge
             }
             catch (Exception ex)
             {
-                m_Logger.Log("Failed to stop MCP server process: " + ex.Message);
+                m_Logger.PublicError("Failed to stop MCP server process: " + ex.Message);
             }
             finally
             {

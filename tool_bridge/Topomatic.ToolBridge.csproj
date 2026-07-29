@@ -50,6 +50,11 @@
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="Topomatic.ApplicationEnvironment, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Out\Bin\Topomatic.ApplicationEnvironment.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Topomatic.ApplicationPlatform, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Out\Bin\Topomatic.ApplicationPlatform.dll</HintPath>

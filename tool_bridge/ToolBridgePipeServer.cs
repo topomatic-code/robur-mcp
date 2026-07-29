@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
@@ -12,6 +13,8 @@ namespace Topomatic.ToolBridge
 {
     internal sealed class ToolBridgePipeServer : IDisposable
     {
+        private const int MaxLoggedPayloadLength = 64 * 1024;
+
         private readonly string m_PipeName;
         private readonly ToolManager m_ToolManager;
         private readonly ToolBridgeLogger m_Logger;
@@ -140,7 +143,7 @@ namespace Topomatic.ToolBridge
                 catch (Exception ex)
                 {
                     if (!IsShuttingDown(token))
-                        m_Logger.Log("AcceptLoop error: " + ex);
+                        m_Logger.PublicError("AcceptLoop error: " + ex);
                     Thread.Sleep(500);
                 }
                 finally
@@ -165,6 +168,16 @@ namespace Topomatic.ToolBridge
                         if (line == null)
                             return;
 
+                        var systemLoggingEnabled = m_Logger.SystemLoggingEnabled;
+                        string exchangeId = null;
+                        Stopwatch stopwatch = null;
+                        if (systemLoggingEnabled)
+                        {
+                            exchangeId = Guid.NewGuid().ToString("N");
+                            stopwatch = Stopwatch.StartNew();
+                            m_Logger.SystemInfo($"Pipe request [exchange_id={exchangeId}]: " + PreparePayloadForLog(line));
+                        }
+
                         BridgeRequest request = null;
                         BridgeResponse response = null;
                         try
@@ -173,7 +186,7 @@ namespace Topomatic.ToolBridge
                         }
                         catch (JsonException ex)
                         {
-                            m_Logger.Log("Bad request: invalid JSON. " + ex);
+                            m_Logger.PublicWarning("Bad request: invalid JSON. " + ex);
                             response = BridgeResponse.Fail(
                                 null,
                                 ErrorCodes.BadRequest,
@@ -193,7 +206,7 @@ namespace Topomatic.ToolBridge
                             }
                             catch (ToolBridgeException ex)
                             {
-                                m_Logger.Log($"Expected error [{ex.Code}]: {ex}");
+                                m_Logger.PublicWarning($"Expected error [{ex.Code}]: {ex}");
                                 response = BridgeResponse.Fail(
                                     request?.Id,
                                     ex.Code,
@@ -208,6 +221,15 @@ namespace Topomatic.ToolBridge
 
                         var json = SerializeResponse(response, request?.Id);
                         writer.WriteLine(json);
+                        if (systemLoggingEnabled)
+                        {
+                            stopwatch.Stop();
+                            m_Logger.SystemInfo(
+                                $"Pipe response [exchange_id={exchangeId}] "
+                                + $"[request_id={FormatLogValue(request?.Id)}] "
+                                + $"[elapsed_ms={stopwatch.ElapsedMilliseconds}]: "
+                                + PreparePayloadForLog(json));
+                        }
                     }
                 }
             }
@@ -224,7 +246,7 @@ namespace Topomatic.ToolBridge
         private BridgeResponse CreateInternalErrorResponse(string requestId, Exception exception)
         {
             var traceId = Guid.NewGuid().ToString("N");
-            m_Logger.Log($"Internal error [{traceId}]: {exception}");
+            m_Logger.PublicError($"Internal error [{traceId}]: {exception}");
             return BridgeResponse.Fail(
                 requestId,
                 ErrorCodes.InternalError,
@@ -256,7 +278,7 @@ namespace Topomatic.ToolBridge
             }
             catch (Exception detailsException)
             {
-                m_Logger.Log($"Invalid error details omitted [{exception.Code}]: {detailsException}");
+                m_Logger.PublicWarning($"Invalid error details omitted [{exception.Code}]: {detailsException}");
                 return null;
             }
         }
@@ -270,19 +292,14 @@ namespace Topomatic.ToolBridge
                 return typeof(Exception).IsAssignableFrom(objectType);
             }
 
-            public override object ReadJson(
-                JsonReader reader,
-                Type objectType,
-                object existingValue,
-                JsonSerializer serializer)
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {
                 throw new NotSupportedException();
             }
 
             public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
             {
-                throw new JsonSerializationException(
-                    "Exception objects are not allowed in error details.");
+                throw new JsonSerializationException("Exception objects are not allowed in error details.");
             }
         }
 
@@ -293,7 +310,7 @@ namespace Topomatic.ToolBridge
             switch ((request.Method ?? string.Empty).Trim())
             {
                 case "ping":
-                    m_Logger.Log("execute -> ping");
+                    m_Logger.PublicInfo("execute -> ping");
                     return BridgeResponse.OK(request.Id, new
                     {
                         protocolVersion = "1.0",
@@ -301,7 +318,7 @@ namespace Topomatic.ToolBridge
                         serverTimeUtc = DateTime.UtcNow.ToString("O")
                     });
                 case "list_tools":
-                    m_Logger.Log("execute -> list_tools");
+                    m_Logger.PublicInfo("execute -> list_tools");
                     return BridgeResponse.OK(request.Id, new
                     {
                         tools = m_ToolManager.GetTools()
@@ -312,12 +329,30 @@ namespace Topomatic.ToolBridge
                     var toolName = "<missing>";
                     if (request.Params != null && request.Params.TryGetValue("tool_name", out var toolNameObj))
                         toolName = Convert.ToString(toolNameObj);
-                    m_Logger.Log($"execute -> call_tool -> {toolName}");
+                    m_Logger.PublicInfo($"execute -> call_tool -> {toolName}");
                     return BridgeResponse.OK(request.Id, m_ToolManager.CallTool(request.Params));
                 default:
-                    m_Logger.Log("execute -> unknown method");
-                    return BridgeResponse.Fail(request.Id, ErrorCodes.BadRequest, "Unknown method: " + request.Method, null);
+                    m_Logger.PublicWarning("execute -> unknown method");
+                    return BridgeResponse.Fail(
+                        request.Id,
+                        ErrorCodes.BadRequest,
+                        "Unknown method: " + request.Method,
+                        null);
             }
+        }
+
+        private static string FormatLogValue(string value)
+        {
+            return value == null ? "null" : JsonConvert.ToString(value);
+        }
+
+        private static string PreparePayloadForLog(string payload)
+        {
+            if (payload == null)
+                return "<null>";
+            if (payload.Length <= MaxLoggedPayloadLength)
+                return payload;
+            return payload.Substring(0, MaxLoggedPayloadLength) + $"... [truncated; original_chars={payload.Length}]";
         }
 
         private static object CreatePipeToolDefinition(ToolDefinition tool)

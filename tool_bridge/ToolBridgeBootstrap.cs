@@ -38,7 +38,7 @@ namespace Topomatic.ToolBridge
             toolManager.Initialize();
             m_Server = new ToolBridgePipeServer("robur_tool_bridge", toolManager, m_Logger);
             m_Server.Start();
-            m_Logger.Log("Pipe server started.");
+            m_Logger.PublicInfo("Pipe server started.");
         }
 
         public void Shutdown()
@@ -47,7 +47,7 @@ namespace Topomatic.ToolBridge
                 return;
             m_Server.Dispose();
             m_Server = null;
-            m_Logger.Log("Pipe server stopped.");
+            m_Logger.PublicInfo("Pipe server stopped.");
         }
     }
 }
