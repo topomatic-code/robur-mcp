@@ -13,8 +13,6 @@ namespace Topomatic.ToolBridge
 {
     internal sealed class ToolBridgePipeServer : IDisposable
     {
-        private const int MaxLoggedPayloadLength = 64 * 1024;
-
         private readonly string m_PipeName;
         private readonly ToolManager m_ToolManager;
         private readonly ToolBridgeLogger m_Logger;
@@ -175,7 +173,10 @@ namespace Topomatic.ToolBridge
                         {
                             exchangeId = Guid.NewGuid().ToString("N");
                             stopwatch = Stopwatch.StartNew();
-                            m_Logger.SystemInfo($"Pipe request [exchange_id={exchangeId}]: " + PreparePayloadForLog(line));
+                            m_Logger.SystemInfo(
+                                $"Pipe request [exchange_id={exchangeId}]:"
+                                + Environment.NewLine
+                                + PreparePayloadForLog(line));
                         }
 
                         BridgeRequest request = null;
@@ -227,7 +228,8 @@ namespace Topomatic.ToolBridge
                             m_Logger.SystemInfo(
                                 $"Pipe response [exchange_id={exchangeId}] "
                                 + $"[request_id={FormatLogValue(request?.Id)}] "
-                                + $"[elapsed_ms={stopwatch.ElapsedMilliseconds}]: "
+                                + $"[elapsed_ms={stopwatch.ElapsedMilliseconds}]:"
+                                + Environment.NewLine
                                 + PreparePayloadForLog(json));
                         }
                     }
@@ -350,9 +352,14 @@ namespace Topomatic.ToolBridge
         {
             if (payload == null)
                 return "<null>";
-            if (payload.Length <= MaxLoggedPayloadLength)
+            try
+            {
+                return JToken.Parse(payload).ToString(Formatting.Indented);
+            }
+            catch (JsonException)
+            {
                 return payload;
-            return payload.Substring(0, MaxLoggedPayloadLength) + $"... [truncated; original_chars={payload.Length}]";
+            }
         }
 
         private static object CreatePipeToolDefinition(ToolDefinition tool)

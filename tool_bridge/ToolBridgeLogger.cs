@@ -13,7 +13,6 @@ namespace Topomatic.ToolBridge
     [Obfuscation(Exclude = true, ApplyToMembers = true)]
     public sealed class ToolBridgeLogger
     {
-        private const string LogSource = "Robur tool bridge";
         private const string SystemLogFileNamePrefix = "tool_bridge";
 
         private static readonly Lazy<ToolBridgeLogger> m_Instance = new Lazy<ToolBridgeLogger>(() => new ToolBridgeLogger());
@@ -58,7 +57,7 @@ namespace Topomatic.ToolBridge
             }
         }
 
-        public string CreateLogString(string message) => $"[{DateTime.Now:HH:mm:ss}] [{LogSource}]: {message}";
+        public string CreateLogString(string message) => $"[{DateTime.Now:HH:mm:ss}] [Robur tool bridge]: {message}";
 
         public void PublicInfo(string message) => WritePublic(LogLevel.Info, message);
         public void PublicWarning(string message) => WritePublic(LogLevel.Warning, message);
@@ -143,16 +142,7 @@ namespace Topomatic.ToolBridge
         private static string CreateSystemLogEntry(LogLevel level, string message, Exception exception)
         {
             var builder = new StringBuilder();
-            builder
-                .Append('[')
-                .Append(DateTimeOffset.Now.ToString("O"))
-                .Append("] [SYSTEM] [")
-                .Append(GetLevelName(level))
-                .Append("] [")
-                .Append(LogSource)
-                .Append("]: ")
-                .AppendLine(message ?? string.Empty);
-
+            builder.AppendLine($"[{DateTimeOffset.Now.ToString("O")}] [{GetLevelName(level)}] {message ?? string.Empty}");
             if (exception != null)
                 builder.AppendLine(exception.ToString());
             return builder.ToString();
