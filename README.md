@@ -93,7 +93,8 @@ python scripts/build_tpm.py --version 1.2.3 --caption "Robur MCP"
 - `tool_bridge_shutdown` - останавливает pipe bridge;
 - `mcp_server_run` - запускает упакованный MCP-сервер;
 - `mcp_server_shutdown` - останавливает MCP-сервер;
-- `mcp_run` - запускает named pipe bridge и MCP-сервер.
+- `mcp_run` - запускает named pipe bridge и MCP-сервер;
+- `tool_bridge_log` - включает запись системного журнала в файл.
 
 Сервер по умолчанию поднимается на:
 
