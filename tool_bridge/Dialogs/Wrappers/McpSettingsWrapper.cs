@@ -1,4 +1,6 @@
 ﻿using System.ComponentModel;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
@@ -12,11 +14,6 @@ namespace Topomatic.ToolBridge.Dialogs.Wrappers
     {
         private const string CATEGORY_SERVER_STARTUP_PARAMETERS = "Параметры запуска сервера";
         private const string CATEGORY_SYSTEM_PARAMETERS = "Параметры системы";
-
-        private static readonly Regex HostRegex = new Regex(
-            @"^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)$",
-            RegexOptions.CultureInvariant
-        );
 
         private static readonly Regex PortRegex = new Regex(
             @"^(?:[1-9]\d{0,3}|[1-5]\d{4}|6[0-4]\d{3}|65[0-4]\d{2}|655[0-2]\d|6553[0-5])$",
@@ -48,16 +45,19 @@ namespace Topomatic.ToolBridge.Dialogs.Wrappers
             }
             set
             {
-                if (value == null || !HostRegex.IsMatch(value))
+                IPAddress address;
+                if (!IPAddress.TryParse(value, out address) ||
+                    address.AddressFamily != AddressFamily.InterNetwork ||
+                    !IPAddress.IsLoopback(address))
                 {
                     MessageDlg.Show(
-                        "Некорректное значение хоста. Укажите IPv4-адрес, например 127.0.0.1.",
+                        "Некорректное значение хоста. Укажите локальный IPv4-адрес из диапазона 127.0.0.0/8, например 127.0.0.1.",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning
                     );
                     return;
                 }
-                m_Host = value;
+                m_Host = address.ToString();
             }
         }
 

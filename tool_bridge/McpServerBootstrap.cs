@@ -3,6 +3,8 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using Topomatic.ToolBridge.Settings;
 
@@ -32,8 +34,7 @@ namespace Topomatic.ToolBridge
     {
         private const int ShutdownTimeoutMilliseconds = 5000;
 
-        private static readonly Lazy<McpServerBootstrap> s_Instance =
-            new Lazy<McpServerBootstrap>(() => new McpServerBootstrap());
+        private static readonly Lazy<McpServerBootstrap> m_Instance = new Lazy<McpServerBootstrap>(() => new McpServerBootstrap());
 
         private readonly object m_SyncRoot = new object();
         private readonly ToolBridgeLogger m_Logger;
@@ -42,7 +43,7 @@ namespace Topomatic.ToolBridge
         private Process m_McpServerProcess;
         private SafeJobHandle m_LifetimeJob;
 
-        public static McpServerBootstrap Instance => s_Instance.Value;
+        public static McpServerBootstrap Instance => m_Instance.Value;
 
         private McpServerBootstrap()
         {
@@ -72,6 +73,7 @@ namespace Topomatic.ToolBridge
             Process process = null;
             SafeJobHandle lifetimeJob = null;
             string startupError = null;
+            var serverStarted = false;
 
             lock (m_SyncRoot)
             {
@@ -86,11 +88,11 @@ namespace Topomatic.ToolBridge
                 DisposeJob(m_LifetimeJob);
                 m_LifetimeJob = null;
 
-                process = CreateProcess(executablePath, McpSettings.Host, McpSettings.Port);
-                AttachProcessHandlers(process);
-
                 try
                 {
+                    process = CreateProcess(executablePath, McpSettings.Host, McpSettings.Port);
+                    AttachProcessHandlers(process);
+
                     if (!process.Start())
                         throw new InvalidOperationException("Process.Start returned false.");
 
@@ -104,19 +106,22 @@ namespace Topomatic.ToolBridge
                     m_LifetimeJob = lifetimeJob;
                     process = null;
                     lifetimeJob = null;
+                    serverStarted = true;
                 }
                 catch (Exception ex)
                 {
                     startupError = ex.Message;
-                    process.Exited -= OnMcpServerProcessExited;
+                    if (process != null)
+                        process.Exited -= OnMcpServerProcessExited;
                 }
             }
 
-            if (process != null)
+            if (!serverStarted)
             {
                 // Не удалось полностью запустить сервер: завершаем уже созданный
                 // процесс, чтобы он не оказался отделён от жизненного цикла Robur.
-                StopProcess(process, null);
+                if (process != null)
+                    StopProcess(process, lifetimeJob);
                 m_Logger.PublicError("Failed to start MCP server: " + startupError);
                 return;
             }
@@ -148,12 +153,14 @@ namespace Topomatic.ToolBridge
 
         private static Process CreateProcess(string executablePath, string host, string port)
         {
+            var normalizedHost = ParseLoopbackHost(host);
+            var normalizedPort = ParsePort(port);
             return new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = executablePath,
-                    Arguments = $"--host={host} --port={port}",
+                    Arguments = $"--host={normalizedHost} --port={normalizedPort}",
                     WorkingDirectory = Path.GetDirectoryName(executablePath),
                     UseShellExecute = false,
                     CreateNoWindow = true,
@@ -162,6 +169,30 @@ namespace Topomatic.ToolBridge
                 },
                 EnableRaisingEvents = true
             };
+        }
+
+        private static string ParseLoopbackHost(string host)
+        {
+            IPAddress address;
+            if (!IPAddress.TryParse(host, out address) ||
+                address.AddressFamily != AddressFamily.InterNetwork ||
+                !IPAddress.IsLoopback(address))
+            {
+                throw new InvalidOperationException("MCP server host must be an IPv4 loopback address.");
+            }
+            return address.ToString();
+        }
+
+        private static int ParsePort(string port)
+        {
+            int parsedPort;
+            if (!int.TryParse(port, out parsedPort) ||
+                parsedPort < 1 ||
+                parsedPort > 65535)
+            {
+                throw new InvalidOperationException("MCP server port must be an integer between 1 and 65535.");
+            }
+            return parsedPort;
         }
 
         private SafeJobHandle CreateLifetimeJob(Process process)
@@ -195,9 +226,7 @@ namespace Topomatic.ToolBridge
             }
         }
 
-        private static void SetJobLimits(
-            SafeJobHandle job,
-            NativeMethods.JobObjectExtendedLimitInformation limits)
+        private static void SetJobLimits(SafeJobHandle job, NativeMethods.JobObjectExtendedLimitInformation limits)
         {
             var size = Marshal.SizeOf(typeof(NativeMethods.JobObjectExtendedLimitInformation));
             var buffer = Marshal.AllocHGlobal(size);
@@ -205,10 +234,10 @@ namespace Topomatic.ToolBridge
             {
                 Marshal.StructureToPtr(limits, buffer, false);
                 if (!NativeMethods.SetInformationJobObject(
-                        job,
-                        NativeMethods.JobObjectInfoType.ExtendedLimitInformation,
-                        buffer,
-                        (uint)size))
+                    job,
+                    NativeMethods.JobObjectInfoType.ExtendedLimitInformation,
+                    buffer,
+                    (uint)size))
                 {
                     throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not configure the MCP server lifetime job.");
                 }
@@ -376,9 +405,9 @@ namespace Topomatic.ToolBridge
 
         private sealed class SafeJobHandle : SafeHandleZeroOrMinusOneIsInvalid
         {
-            private SafeJobHandle()
-                : base(true)
+            private SafeJobHandle() : base(true)
             {
+
             }
 
             protected override bool ReleaseHandle()
