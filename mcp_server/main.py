@@ -312,8 +312,12 @@ class LocalHttpSecurityMiddleware:
 
 @contextlib.asynccontextmanager
 async def lifespan(_: Starlette):
-    async with session_manager.run():
-        yield
+    await asyncio.to_thread(tool_bridge.connect)
+    try:
+        async with session_manager.run():
+            yield
+    finally:
+        await asyncio.to_thread(tool_bridge.close)
 
 
 def create_app(host: str = DEFAULT_HOST, port: int = DEFAULT_PORT) -> ASGIApp:

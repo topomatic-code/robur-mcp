@@ -21,6 +21,9 @@ namespace Topomatic.ToolBridge
 
         private Task m_AcceptLoop;
         private NamedPipeServerStream m_ActiveStream;
+        private WindowsBridgeSecurityContext m_SecurityContext;
+        private bool m_Started;
+        private volatile bool m_Locked;
         private bool m_Disposed;
 
         public ToolBridgePipeServer(string pipeName, ToolManager toolManager, ToolBridgeLogger logger)
@@ -35,10 +38,29 @@ namespace Topomatic.ToolBridge
         public void Start()
         {
             ThrowIfDisposed();
-            if (m_AcceptLoop != null && !m_AcceptLoop.IsCompleted)
+            if (m_Started)
                 return;
-            m_AcceptLoop = Task.Run(() => AcceptLoop(m_Cts.Token));
+
+            WindowsBridgeSecurityContext securityContext = null;
+            NamedPipeServerStream stream = null;
+            try
+            {
+                securityContext = WindowsBridgeSecurityContext.Acquire();
+                stream = securityContext.CreatePipe(m_PipeName);
+                m_SecurityContext = securityContext;
+                SetActiveStream(stream);
+                m_Started = true;
+                m_AcceptLoop = Task.Run(() => AcceptSingleClient(stream, m_Cts.Token));
+            }
+            catch
+            {
+                stream?.Dispose();
+                securityContext?.Dispose();
+                throw;
+            }
         }
+
+        internal bool Locked => m_Locked;
 
         public void Dispose()
         {
@@ -47,17 +69,46 @@ namespace Topomatic.ToolBridge
             m_Disposed = true;
             m_Cts.Cancel();
             AbortActiveStream();
+            var acceptLoop = m_AcceptLoop;
+            var acceptLoopCompleted = acceptLoop == null;
             try
             {
-                m_AcceptLoop?.Wait(TimeSpan.FromSeconds(5));
+                if (acceptLoop != null)
+                    acceptLoopCompleted = acceptLoop.Wait(TimeSpan.FromSeconds(5));
             }
-            catch (AggregateException) { }
-            catch (ObjectDisposedException) { }
+            catch (AggregateException)
+            {
+                acceptLoopCompleted = true;
+            }
+            catch (ObjectDisposedException)
+            {
+                acceptLoopCompleted = acceptLoop?.IsCompleted ?? true;
+            }
             finally
             {
                 m_AcceptLoop = null;
             }
+
+            if (acceptLoopCompleted)
+            {
+                ReleaseSecurityContext();
+            }
+            else
+            {
+                // Mutex должен оставаться занятым, пока рабочая задача фактически не завершится.
+                acceptLoop.ContinueWith(
+                    _ => ReleaseSecurityContext(),
+                    CancellationToken.None,
+                    TaskContinuationOptions.ExecuteSynchronously,
+                    TaskScheduler.Default);
+            }
             m_Cts.Dispose();
+        }
+
+        private void ReleaseSecurityContext()
+        {
+            var securityContext = Interlocked.Exchange(ref m_SecurityContext, null);
+            securityContext?.Dispose();
         }
 
         private void ThrowIfDisposed()
@@ -106,49 +157,45 @@ namespace Topomatic.ToolBridge
             }
         }
 
-        private void AcceptLoop(CancellationToken token)
+        private void AcceptSingleClient(NamedPipeServerStream stream, CancellationToken token)
         {
-            while (!IsShuttingDown(token))
+            try
             {
-                NamedPipeServerStream stream = null;
-                try
-                {
-                    stream = new NamedPipeServerStream(
-                        m_PipeName,
-                        PipeDirection.InOut,
-                        1,
-                        PipeTransmissionMode.Byte,
-                        PipeOptions.Asynchronous
-                    );
-                    SetActiveStream(stream);
-                    stream.WaitForConnection();
-                    if (IsShuttingDown(token))
-                        return;
-                    HandleClient(stream, token);
-                }
-                catch (OperationCanceledException)
-                {
+                stream.WaitForConnection();
+                if (IsShuttingDown(token))
                     return;
-                }
-                catch (ObjectDisposedException) when (IsShuttingDown(token))
+
+                HandleClient(stream, token);
+                if (!IsShuttingDown(token))
                 {
-                    return;
+                    m_Locked = true;
+                    m_Logger.PublicWarning("Pipe client disconnected. Restart the pipe bridge to accept another client.");
                 }
-                catch (IOException) when (IsShuttingDown(token))
+            }
+            catch (OperationCanceledException)
+            {
+                // штатная остановка сервера
+            }
+            catch (ObjectDisposedException) when (IsShuttingDown(token))
+            {
+                // штатная остановка сервера
+            }
+            catch (IOException) when (IsShuttingDown(token))
+            {
+                // штатная остановка сервера
+            }
+            catch (Exception ex)
+            {
+                if (!IsShuttingDown(token))
                 {
-                    return;
+                    m_Locked = true;
+                    m_Logger.PublicError("Pipe server error: " + ex);
                 }
-                catch (Exception ex)
-                {
-                    if (!IsShuttingDown(token))
-                        m_Logger.PublicError("AcceptLoop error: " + ex);
-                    Thread.Sleep(500);
-                }
-                finally
-                {
-                    ClearActiveStream(stream);
-                    stream?.Dispose();
-                }
+            }
+            finally
+            {
+                ClearActiveStream(stream);
+                stream.Dispose();
             }
         }
 
@@ -160,11 +207,25 @@ namespace Topomatic.ToolBridge
                 using (var writer = new StreamWriter(stream, new UTF8Encoding(false), 4096, true))
                 {
                     writer.AutoFlush = true;
+                    var clientVerified = false;
                     while (stream.IsConnected && !token.IsCancellationRequested)
                     {
                         var line = reader.ReadLine();
                         if (line == null)
                             return;
+
+                        if (!clientVerified)
+                        {
+                            // Windows предоставляет token клиента для impersonation после чтения его сообщения.
+                            if (!m_SecurityContext.IsCurrentLogonClient(stream))
+                            {
+                                m_Locked = true;
+                                m_Logger.PublicWarning("Pipe client belongs to a different Windows logon session.");
+                                return;
+                            }
+                            clientVerified = true;
+                            m_Logger.PublicInfo("Pipe client connected.");
+                        }
 
                         var systemLoggingEnabled = m_Logger.SystemLoggingEnabled;
                         string exchangeId = null;
@@ -315,7 +376,6 @@ namespace Topomatic.ToolBridge
                     m_Logger.PublicInfo("execute -> ping");
                     return BridgeResponse.OK(request.Id, new
                     {
-                        protocolVersion = "1.0",
                         cadProcess = "demo-cad",
                         serverTimeUtc = DateTime.UtcNow.ToString("O")
                     });

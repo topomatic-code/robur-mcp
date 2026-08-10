@@ -163,6 +163,7 @@
     <Compile Include="ToolBridgeException.cs" />
     <Compile Include="ToolBridgePipeServer.cs" />
     <Compile Include="ToolBridgePluginHost.cs" />
+    <Compile Include="WindowsBridgeSecurity.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ToolDefAttribute.cs" />
     <Compile Include="ToolDefinition.cs" />
