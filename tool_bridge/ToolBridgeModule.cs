@@ -19,10 +19,10 @@ namespace Topomatic.ToolBridge
     {
         private const string SystemLogDirectoryPathTemplate = @"%UserAppDataPath%\Support\robur-mcp";
 
-        public override void Initialize(PluginFactory factory)
+        [cmd("tool_bridge_init_module")]
+        private void InitModule()
         {
-            base.Initialize(factory);
-            if (McpSettings.AutoRun)
+            if (!McpServerBootstrap.Instance.ServerRunning && McpSettings.AutoRun)
                 McpRun();
         }
 
