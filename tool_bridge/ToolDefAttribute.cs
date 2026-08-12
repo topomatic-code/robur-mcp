@@ -43,6 +43,11 @@ namespace Topomatic.ToolBridge
         /// </summary>
         public bool IdempotentHint { get; set; }
 
+        /// <summary>
+        /// Включить tool по умолчанию.
+        /// </summary>
+        public bool DefaultEnabled { get; set; } = true;
+
         internal ToolDefinition GetDefinition()
         {
             return new ToolDefinition(
@@ -50,7 +55,8 @@ namespace Topomatic.ToolBridge
                 Domain,
                 Description,
                 JObject.Parse(InputSchema),
-                new ToolAnnotations(ReadOnlyHint, DestructiveHint, IdempotentHint)
+                new ToolAnnotations(ReadOnlyHint, DestructiveHint, IdempotentHint),
+                DefaultEnabled
             );
         }
     }

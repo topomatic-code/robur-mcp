@@ -7,13 +7,14 @@ namespace Topomatic.ToolBridge
     [Obfuscation(Exclude = true, ApplyToMembers = true)]
     internal sealed class ToolDefinition
     {
-        public ToolDefinition(string name, string domain, string description, JObject inputSchema, ToolAnnotations annotations)
+        public ToolDefinition(string name, string domain, string description, JObject inputSchema, ToolAnnotations annotations, bool defaultEnabled)
         {
             Name = name;
             Domain = domain;
             Description = description;
             InputSchema = inputSchema;
             Annotations = annotations;
+            DefaultEnabled = defaultEnabled;
         }
 
         [JsonProperty("name")]
@@ -30,5 +31,8 @@ namespace Topomatic.ToolBridge
 
         [JsonProperty("annotations")]
         public ToolAnnotations Annotations { get; }
+
+        [JsonIgnore]
+        public bool DefaultEnabled { get; }
     }
 }

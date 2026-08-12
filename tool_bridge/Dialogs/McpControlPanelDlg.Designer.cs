@@ -74,6 +74,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.piSettings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(238)))), ((int)(((byte)(237)))), ((int)(((byte)(232)))));
+            this.piSettings.DescriptionVisible = false;
             this.piSettings.Location = new System.Drawing.Point(12, 52);
             this.piSettings.Name = "piSettings";
             this.piSettings.SelectedIndex = -1;

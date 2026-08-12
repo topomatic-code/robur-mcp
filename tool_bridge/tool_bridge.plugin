@@ -13,6 +13,11 @@
       "cmd": "mcp_control_panel",
       "title": "Управление сервером",
       "description": "Открыть панель управления Mcp-сервером"
+    },
+    "id_mcp_tool_settings": {
+      "cmd": "mcp_tool_settings",
+      "title": "Инструменты",
+      "description": "Открыть окно настроек инструментов Mcp-сервера"
     }
   },
   "menubars": {
@@ -25,7 +30,8 @@
       ]
     },
     "rbproj.mcp_server": [
-      "id_mcp_control_panel"
+      "id_mcp_control_panel",
+      "id_mcp_tool_settings"
     ]
   }
 }

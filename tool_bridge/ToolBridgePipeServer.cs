@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Topomatic.ToolBridge.Settings;
 
 namespace Topomatic.ToolBridge
 {
@@ -384,6 +385,7 @@ namespace Topomatic.ToolBridge
                     return BridgeResponse.OK(request.Id, new
                     {
                         tools = m_ToolManager.GetTools()
+                            .Where(t => ToolSettings.GetConfig(t.Name)?.Enabled ?? false)
                             .Select(CreatePipeToolDefinition)
                             .ToArray()
                     });
@@ -391,6 +393,10 @@ namespace Topomatic.ToolBridge
                     var toolName = "<missing>";
                     if (request.Params != null && request.Params.TryGetValue("tool_name", out var toolNameObj))
                         toolName = Convert.ToString(toolNameObj);
+
+                    if ((!ToolSettings.GetConfig(toolName)?.Enabled) ?? true)
+                        throw new BadRequestException($"Tool {toolName} отключен пользователем.");
+
                     m_Logger.PublicInfo($"execute -> call_tool -> {toolName}");
                     return BridgeResponse.OK(request.Id, m_ToolManager.CallTool(request.Params));
                 default:

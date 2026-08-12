@@ -138,14 +138,29 @@
     <Compile Include="Controls\ToggleButton.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="Controls\ToggleRow.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Dialogs\Converters\ToolApprovalScopeConverter.cs" />
     <Compile Include="Dialogs\McpControlPanelDlg.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Dialogs\McpControlPanelDlg.Designer.cs">
       <DependentUpon>McpControlPanelDlg.cs</DependentUpon>
     </Compile>
+    <Compile Include="Dialogs\ToolSettingsDlg.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ToolSettingsDlg.Designer.cs">
+      <DependentUpon>ToolSettingsDlg.cs</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\Wrappers\McpSettingsWrapper.cs" />
+    <Compile Include="Dialogs\Wrappers\ToolConfigWrapper.cs" />
+    <Compile Include="Dialogs\Wrappers\ToolSettingsWrapper.cs" />
     <Compile Include="Settings\McpSettings.cs" />
+    <Compile Include="Settings\ToolApprovalScope.cs" />
+    <Compile Include="Settings\ToolConfig.cs" />
+    <Compile Include="Settings\ToolSettings.cs" />
     <Compile Include="Utils\DwgUtils.cs" />
     <Compile Include="ErrorCodes.cs" />
     <Compile Include="Utils\JsonUtils.cs" />
@@ -189,6 +204,10 @@
     <EmbeddedResource Include="Dialogs\McpControlPanelDlg.resx">
       <DependentUpon>McpControlPanelDlg.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ToolSettingsDlg.resx">
+      <DependentUpon>ToolSettingsDlg.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

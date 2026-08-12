@@ -6,7 +6,7 @@ namespace Topomatic.ToolBridge.Settings
 {
     internal static class McpSettings
     {
-        private const string SETTINGS_PATH = @"%UserAppDataPath%\Support\robur-mcp\mcp_settings.rbobj";
+        private const string SETTINGS_PATH = @"%UserAppDataPath%\Support\robur-mcp\settings\mcp_settings.rbobj";
 
         private const string DEFAULT_HOST = "127.0.0.1";
         private const string DEFAULT_PORT = "8000";
@@ -43,6 +43,8 @@ namespace Topomatic.ToolBridge.Settings
         public static void Save()
         {
             var settingsPath = ProcessEnvironment.Current.ExpandEnvironmentVariables(SETTINGS_PATH);
+            var dirName = Path.GetDirectoryName(settingsPath);
+            Directory.CreateDirectory(dirName);
             var stgDocument = new StgDocument();
             var root = stgDocument.Body;
             root.Attribute.AddString("Host", Host);

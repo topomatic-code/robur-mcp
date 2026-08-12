@@ -17,7 +17,7 @@ namespace Topomatic.ToolBridge
     [SuppressMessage("CodeQuality", "IDE0051:Remove unused private members", Justification = "<Pending>")]
     internal sealed class ToolBridgeModule : PluginInitializator
     {
-        private const string SystemLogDirectoryPathTemplate = @"%UserAppDataPath%\Support\robur-mcp";
+        private const string SystemLogDirectoryPathTemplate = @"%UserAppDataPath%\Support\robur-mcp\logs";
 
         [cmd("tool_bridge_init_module")]
         private void InitModule()
@@ -120,6 +120,14 @@ namespace Topomatic.ToolBridge
                         ToolBridgeShutdown();
                 }
             }
+        }
+
+        [cmd("mcp_tool_settings")]
+        private void ToolSettings()
+        {
+            var toolSettings = new ToolSettingsWrapper();
+            if (ToolSettingsDlg.Execute(toolSettings))
+                toolSettings.SaveChanges();
         }
 
         [cmd("generate_tools")]
