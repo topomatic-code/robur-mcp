@@ -167,6 +167,10 @@
     <Compile Include="Dialogs\Wrappers\McpSettingsWrapper.cs" />
     <Compile Include="Dialogs\Wrappers\ToolConfigWrapper.cs" />
     <Compile Include="Dialogs\Wrappers\ToolSettingsWrapper.cs" />
+    <Compile Include="Exceptions\BadRequestException.cs" />
+    <Compile Include="Exceptions\PreconditionFailedException.cs" />
+    <Compile Include="Exceptions\ToolExecutionFailedException.cs" />
+    <Compile Include="Exceptions\ToolNotFoundException.cs" />
     <Compile Include="Settings\McpSettings.cs" />
     <Compile Include="Settings\ToolApprovalScope.cs" />
     <Compile Include="Settings\ToolConfig.cs" />
@@ -186,7 +190,7 @@
     <Compile Include="ToolBridgeBootstrap.cs" />
     <Compile Include="ToolBridgeLogger.cs" />
     <Compile Include="ToolBridgeModule.cs" />
-    <Compile Include="ToolBridgeException.cs" />
+    <Compile Include="Exceptions\ToolBridgeException.cs" />
     <Compile Include="ToolBridgePipeServer.cs" />
     <Compile Include="ToolBridgePluginHost.cs" />
     <Compile Include="WindowsBridgeSecurity.cs" />

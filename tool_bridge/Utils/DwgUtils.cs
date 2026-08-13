@@ -9,6 +9,7 @@ using Topomatic.Dwg.Entities;
 using Topomatic.Dwg.Layer;
 using Topomatic.Landscaping;
 using Topomatic.Tables;
+using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services;
 using Topomatic.Visualization;
 using Topomatic.Visualization.Constructions;

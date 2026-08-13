@@ -6,6 +6,7 @@ using Topomatic.Culverts.Sheets;
 using Topomatic.Culverts.Specifications;
 using Topomatic.FoundationClasses;
 using Topomatic.Tables.Sheets;
+using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services;
 using Topomatic.ToolBridge.Utils;
 

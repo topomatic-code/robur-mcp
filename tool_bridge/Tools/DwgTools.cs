@@ -4,6 +4,7 @@ using System.Linq;
 using Topomatic.Cad.Foundation;
 using Topomatic.Dwg;
 using Topomatic.Dwg.Entities;
+using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Utils;
 
 namespace Topomatic.ToolBridge.Tools

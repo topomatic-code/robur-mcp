@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Topomatic.ToolBridge.Dialogs;
 using Topomatic.ToolBridge.Dialogs.Results;
+using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Settings;
 
 namespace Topomatic.ToolBridge

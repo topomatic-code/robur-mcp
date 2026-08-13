@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Topomatic.FoundationClasses;
+using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services;
 using Topomatic.ToolBridge.Services.Models;
 using Topomatic.ToolBridge.Utils;

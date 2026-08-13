@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Reflection;
 using Topomatic.Cad.Foundation;
+using Topomatic.ToolBridge.Exceptions;
 
 namespace Topomatic.ToolBridge.Utils
 {

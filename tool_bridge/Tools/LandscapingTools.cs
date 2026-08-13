@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Topomatic.Cad.Foundation;
 using Topomatic.Landscaping;
+using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Utils;
 using Topomatic.Visualization;
 
