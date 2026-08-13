@@ -23,15 +23,12 @@ namespace Topomatic.ToolBridge
             m_Tools = new List<Tool>();
         }
 
+        public CadView CadView => m_CadViewProvider?.Invoke();
+
         public void Initialize()
         {
             m_Tools.Clear();
-            var toolProviders = new List<ToolProvider>();
-            ApplicationHost.Current.Plugins.Broadcast("tool_request", new string[] { }, new object[] { toolProviders });
-            foreach (var toolProvider in toolProviders)
-            {
-                m_Tools.AddRange(toolProvider.GetTools());
-            }
+            m_Tools.AddRange(ToolCollector.Tools);
         }
 
         public IList<ToolDefinition> GetTools() => m_Tools.Select(t => t.Definition).ToList();
@@ -51,7 +48,7 @@ namespace Topomatic.ToolBridge
             if (func == null)
                 throw new InvalidOperationException("Tool function is null: " + toolName);
 
-            var cadView = m_CadViewProvider();
+            var cadView = CadView;
             if (cadView == null)
             {
                 throw new PreconditionFailedException(

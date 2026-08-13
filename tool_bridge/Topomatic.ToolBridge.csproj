@@ -135,6 +135,9 @@
     <Compile Include="BridgeError.cs" />
     <Compile Include="BridgeRequest.cs" />
     <Compile Include="BridgeResponse.cs" />
+    <Compile Include="Controls\ApprovalOptionControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Controls\ToggleButton.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -142,6 +145,13 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Dialogs\Converters\ToolApprovalScopeConverter.cs" />
+    <Compile Include="Dialogs\ToolApprovementDlg.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Dialogs\ToolApprovementDlg.Designer.cs">
+      <DependentUpon>ToolApprovementDlg.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Dialogs\Results\ToolApprovementResult.cs" />
     <Compile Include="Dialogs\McpControlPanelDlg.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -161,6 +171,7 @@
     <Compile Include="Settings\ToolApprovalScope.cs" />
     <Compile Include="Settings\ToolConfig.cs" />
     <Compile Include="Settings\ToolSettings.cs" />
+    <Compile Include="ToolCollector.cs" />
     <Compile Include="Utils\DwgUtils.cs" />
     <Compile Include="ErrorCodes.cs" />
     <Compile Include="Utils\JsonUtils.cs" />
@@ -203,6 +214,9 @@
   <ItemGroup>
     <EmbeddedResource Include="Dialogs\McpControlPanelDlg.resx">
       <DependentUpon>McpControlPanelDlg.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Dialogs\ToolApprovementDlg.resx">
+      <DependentUpon>ToolApprovementDlg.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Dialogs\ToolSettingsDlg.resx">
       <DependentUpon>ToolSettingsDlg.cs</DependentUpon>

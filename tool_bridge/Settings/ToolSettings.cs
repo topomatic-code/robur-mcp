@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using Topomatic.ApplicationEnvironment;
-using Topomatic.ApplicationPlatform;
 using Topomatic.Stg;
 
 namespace Topomatic.ToolBridge.Settings
@@ -25,13 +24,6 @@ namespace Topomatic.ToolBridge.Settings
 
         public static void Load()
         {
-            var toolProviders = new List<ToolProvider>();
-            ApplicationHost.Current.Plugins.Broadcast("tool_request", new string[] { }, new object[] { toolProviders });
-            var tools = new List<Tool>();
-            foreach (var toolProvider in toolProviders)
-            {
-                tools.AddRange(toolProvider.GetTools());
-            }
             var settingsPath = ProcessEnvironment.Current.ExpandEnvironmentVariables(SETTINGS_PATH);
             m_ToolConfigs.Clear();
             if (File.Exists(settingsPath))
@@ -49,6 +41,7 @@ namespace Topomatic.ToolBridge.Settings
                     m_ToolConfigs.Add(toolConfig);
                 }
             }
+            var tools = ToolCollector.Tools;
             var unsavedTools = tools.Where(t => !m_ToolConfigs.Any(cfg => cfg.Name.Equals(t.Definition.Name)));
             foreach (var tool in unsavedTools)
             {

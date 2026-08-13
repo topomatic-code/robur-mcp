@@ -8,6 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Topomatic.ToolBridge.Dialogs;
+using Topomatic.ToolBridge.Dialogs.Results;
 using Topomatic.ToolBridge.Settings;
 
 namespace Topomatic.ToolBridge
@@ -269,7 +271,7 @@ namespace Topomatic.ToolBridge
                             }
                             catch (ToolBridgeException ex)
                             {
-                                m_Logger.PublicWarning($"Expected error [{ex.Code}]: {ex}");
+                                m_Logger.SystemWarning($"Expected error [{ex.Code}]: {ex}");
                                 response = BridgeResponse.Fail(
                                     request?.Id,
                                     ex.Code,
@@ -398,6 +400,53 @@ namespace Topomatic.ToolBridge
                         throw new BadRequestException($"Tool {toolName} отключен пользователем.");
 
                     m_Logger.PublicInfo($"execute -> call_tool -> {toolName}");
+
+                    var cadView = m_ToolManager.CadView;
+                    if (cadView != null)
+                    {
+                        cadView.Invoke((Action)(() =>
+                        {
+                            var cfg = ToolSettings.GetConfig(toolName);
+                            if (cfg == null)
+                                throw new InvalidOperationException("Cannot find tool settings");
+                            if ((cfg.Destructive || !cfg.ReadOnly) && cfg.ApprovalScope == ToolApprovalScope.None)
+                            {
+                                var approvement = ToolApprovementDlg.Execute(toolName, cfg.Description);
+                                if (approvement == ToolApprovementResult.Deny)
+                                {
+                                    m_Logger.PublicInfo($"Выполнение tool {toolName} отклонено.");
+                                    throw new PreconditionFailedException($"Пользователь отклонил выполнение tool: {toolName}.");
+                                }
+                                else
+                                {
+                                    switch (approvement)
+                                    {
+                                        case ToolApprovementResult.AllowOnce:
+                                            cfg.ApprovalScope = ToolApprovalScope.None;
+                                            m_Logger.PublicInfo($"Разрешено однократное выполнение tool {toolName}.");
+                                            break;
+                                        case ToolApprovementResult.AllowForSession:
+                                            cfg.ApprovalScope = ToolApprovalScope.Session;
+                                            m_Logger.PublicInfo($"Разрешено выполнение tool {toolName} для текущей сессии.");
+                                            break;
+                                        case ToolApprovementResult.AllowPermanently:
+                                            cfg.ApprovalScope |= ToolApprovalScope.Permanently;
+                                            m_Logger.PublicInfo($"Разрешено постоянное выполнение tool {toolName}.");
+                                            break;
+                                    }
+                                    ToolSettings.Save();
+                                }
+                            }
+                        }));
+                    }
+                    else
+                    {
+                        throw new PreconditionFailedException(
+                            "Не удалось получить активный видовой экран. " +
+                            "Активируйте необходимую модель в структуре проекта и перейдите на требуемый видовой экран."
+                        );
+                    }
+
                     return BridgeResponse.OK(request.Id, m_ToolManager.CallTool(request.Params));
                 default:
                     m_Logger.PublicWarning("execute -> unknown method");
