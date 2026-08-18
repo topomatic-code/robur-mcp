@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Core;
 using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.FoundationClasses;
+using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services.Models;
 
 namespace Topomatic.ToolBridge.Services
@@ -80,28 +82,28 @@ namespace Topomatic.ToolBridge.Services
                 node.Type = child.ModelType;
                 switch (node.Type)
                 {
-                    case "folder":
+                    case ProjectNodeTypes.FOLDER:
                         node.TypeDescription = "(folder) Папка";
                         break;
-                    case "dtm":
+                    case ProjectNodeTypes.DTM:
                         node.TypeDescription = "(model) Поверхность";
                         break;
-                    case "road":
+                    case ProjectNodeTypes.ROAD:
                         node.TypeDescription = "(model) Трасса автомобильной дороги";
                         break;
-                    case "survey":
+                    case ProjectNodeTypes.SURVEY:
                         node.TypeDescription = "(model) Изыскательская (геологическая) трасса";
                         break;
-                    case "global_glg":
+                    case ProjectNodeTypes.GLOBAL_GLG:
                         node.TypeDescription = "(model) Геология";
                         break;
-                    case "culvert":
+                    case ProjectNodeTypes.CULVERT:
                         node.TypeDescription = "(model) Водопропускная труба";
                         break;
-                    case "application/dwg":
+                    case ProjectNodeTypes.APPLICATION_DWG:
                         node.TypeDescription = "(model) Чертеж в формате dwg";
                         break;
-                    case "application/culvert-dwl":
+                    case ProjectNodeTypes.APPLICATION_CULVERT_DWL:
                         node.TypeDescription = "(model) Динамический чертеж водопропускной трубы";
                         break;
                     default:
@@ -167,6 +169,44 @@ namespace Topomatic.ToolBridge.Services
                 }
             }
             return node;
+        }
+
+        public ProjectNode MoveRenameNode(URI nodeUri, string newName)
+        {
+            var root = GetProjectTree();
+            var node = GetNode(nodeUri);
+            if (string.IsNullOrWhiteSpace(newName) || root == null || node == null)
+                return null;
+
+            if (node.Type != ProjectNodeTypes.FOLDER)
+            {
+                var absUri = nodeUri.AsAbsoluteUri;
+                var extIndex = absUri.LastIndexOf('.');
+                if (extIndex == -1)
+                    throw new InvalidOperationException("Unexpected element extension.");
+
+                var newExt = Path.GetExtension(newName);
+                if (string.IsNullOrWhiteSpace(newExt))
+                    throw new BadRequestException($"Неверное новое имя файла {newName}. Имена файлов следует передавать с расширением!");
+
+                var ext = absUri.Substring(extIndex);
+                if (ext != newExt)
+                    throw new BadRequestException($"Изменение расширения файла {node.Uri} недопустимо.");
+            }
+
+            var path = node.Uri.ToString();
+            var projNameIndex = path.IndexOf(root.Name);
+            var itemPath = path.Substring(projNameIndex).Replace($"{root}/", ":");
+            try
+            {
+                ApplicationHost.Current.Plugins.Execute("mvitem", new object[] { itemPath, newName });
+            }
+            catch (MessageException e)
+            {
+                throw new PreconditionFailedException(e.Message, innerException: e);
+            }
+
+            return FindNodes(n => n.Name.Equals(newName)).SingleOrDefault();
         }
 
         public ProjectNode CreateFolder(URI parentUri, string folderName)

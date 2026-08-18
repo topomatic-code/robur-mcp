@@ -95,6 +95,48 @@ namespace Topomatic.ToolBridge.Tools
         }
 
         [ToolDef(
+            Name = "project_move_rename_item",
+            Domain = ToolDomains.Project,
+            Description = "Перемещает или переименовывает элемент активного проекта.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'uri': { 'type': 'string', 'description': 'Полный глобальный uri элемента проекта (из структуры активного проекта).' },
+                'newName': {
+                  'type': 'string',
+                  'description': 'Новое имя (путь) элемента относительно его текущего расположения. Имена файлов необходимо передавать с расширением. Примеры: Name.ext — переименовать в текущей папке; ../Name.ext — переместить на уровень выше; Inner Folder/Name.ext — переместить во вложенную папку Inner Folder.'
+                }
+              },
+              'required': ['uri', 'newName'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = false,
+            DestructiveHint = true,
+            IdempotentHint = false
+        )]
+        public object MoveRenameProjectItem(Dictionary<string, object> args)
+        {
+            var uriStr = JsonUtils.RequireString(args, "uri");
+            if (string.IsNullOrWhiteSpace(uriStr))
+                throw new BadRequestException("URI элемента проекта не может быть пустым.");
+            var newName = JsonUtils.RequireString(args, "newName");
+            if (string.IsNullOrWhiteSpace(newName))
+                throw new BadRequestException("Новое имя элемента проекта не может быть пустым.");
+            var uri = new URI(uriStr);
+            var projectManager = ProjectManager.Instance;
+            if (projectManager.GetNode(uri) == null)
+                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
+            var movedNode = projectManager.MoveRenameNode(uri, newName) ??
+                throw new ToolExecutionFailedException("Не удалось переместить или переименовать элемент проекта.");
+            return new
+            {
+                result = CreateProjectElement(movedNode),
+                description = "Перемещенный или переименованный элемент.",
+                status = "Элемент проекта успешно перемещен или переименован."
+            };
+        }
+
+        [ToolDef(
             Name = "project_create_folder",
             Domain = ToolDomains.Project,
             Description = "Создает папку в структуре проекта.",
