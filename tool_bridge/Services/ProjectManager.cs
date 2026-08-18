@@ -209,6 +209,32 @@ namespace Topomatic.ToolBridge.Services
             return FindNodes(n => n.Name.Equals(newName)).SingleOrDefault();
         }
 
+        public ProjectNode ReorderNode(URI nodeUri, bool upDirection)
+        {
+            var root = GetProjectTree();
+            var node = GetNode(nodeUri);
+            if (root == null || node == null)
+                return null;
+
+            var path = node.Uri.ToString();
+            var projNameIndex = path.IndexOf(root.Name);
+            var itemPath = path.Substring(projNameIndex).Replace($"{root}/", ":");
+
+            try
+            {
+                if (upDirection)
+                    ApplicationHost.Current.Plugins.Execute("coreitem_up", new object[] { itemPath });
+                else
+                    ApplicationHost.Current.Plugins.Execute("coreitem_down", new object[] { itemPath });
+            }
+            catch (MessageException e)
+            {
+                throw new PreconditionFailedException(e.Message, innerException: e);
+            }
+
+            return node;
+        }
+
         public ProjectNode CreateFolder(URI parentUri, string folderName)
         {
             var parentNode = GetNode(parentUri) ?? throw new InvalidOperationException("Не удалось получить родительский элемент.");

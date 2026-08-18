@@ -137,6 +137,53 @@ namespace Topomatic.ToolBridge.Tools
         }
 
         [ToolDef(
+            Name = "project_reorder_item",
+            Domain = ToolDomains.Project,
+            Description = "Перемещает элемент в структуре активного проекта на одну позицию вверх или вниз среди элементов текущего уровня.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'uri': { 'type': 'string', 'description': 'Полный глобальный uri элемента проекта (из структуры активного проекта).' },
+                'direction': {
+                  'type': 'string',
+                  'enum': ['up', 'down'],
+                  'description': 'Направление перемещения: up — на одну позицию вверх, down — на одну позицию вниз.'
+                }
+              },
+              'required': ['uri', 'direction'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = false,
+            DestructiveHint = true,
+            IdempotentHint = false
+        )]
+        public object ReorderProjectItem(Dictionary<string, object> args)
+        {
+            var uriStr = JsonUtils.RequireString(args, "uri");
+            if (string.IsNullOrWhiteSpace(uriStr))
+                throw new BadRequestException("URI элемента проекта не может быть пустым.");
+            var direction = JsonUtils.RequireString(args, "direction");
+            if (direction != "up" && direction != "down")
+                throw new BadRequestException("Направление перемещения должно иметь значение up или down.");
+
+            var uri = new URI(uriStr);
+            var projectManager = ProjectManager.Instance;
+            if (projectManager.GetNode(uri) == null)
+                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
+            var reorderedNode = projectManager.ReorderNode(uri, direction == "up") ??
+                throw new ToolExecutionFailedException("Не удалось изменить порядок элемента проекта.");
+
+            return new
+            {
+                result = CreateProjectElement(reorderedNode),
+                description = "Элемент с измененным положением в структуре проекта.",
+                status = direction == "up"
+                    ? "Элемент проекта успешно перемещен на одну позицию вверх."
+                    : "Элемент проекта успешно перемещен на одну позицию вниз."
+            };
+        }
+
+        [ToolDef(
             Name = "project_create_folder",
             Domain = ToolDomains.Project,
             Description = "Создает папку в структуре проекта.",
