@@ -177,6 +177,7 @@
     <Compile Include="Settings\ToolConfig.cs" />
     <Compile Include="Settings\ToolSettings.cs" />
     <Compile Include="ToolCollector.cs" />
+    <Compile Include="Utils\ConsoleReader.cs" />
     <Compile Include="Utils\DwgUtils.cs" />
     <Compile Include="ErrorCodes.cs" />
     <Compile Include="Utils\JsonUtils.cs" />

@@ -63,7 +63,8 @@ namespace Topomatic.ToolBridge.Tools
                 },
                 'layerName': { 'type': 'string', 'description': 'Имя слоя, на который нужно поместить Tlc-модель. Если не задано, используется активный слой.' },
                 'colorMode': { 'type': 'string', 'description': 'Режим цвета Tlc-модели.', 'enum': ['Indexed', 'ByLayer', 'ByBlock'] },
-                'colorIndex': { 'type': 'integer', 'description': 'Индекс цвета Tlc-модели. Используется только при colorMode = Indexed.' }
+                'colorIndex': { 'type': 'integer', 'description': 'Индекс цвета Tlc-модели. Используется только при colorMode = Indexed.' },
+                'includeConsoleOutput': { 'type': 'boolean', 'description': 'Включать ли консольный вывод Tlc-скрипта в поле consoleOutput результата. По умолчанию false.', 'default': false }
               },
               'required': ['name', 'scriptPath', 'position'],
               'additionalProperties': false
@@ -87,6 +88,7 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
+            var includeConsoleOutput = JsonUtils.GetBool(args, "includeConsoleOutput", false).Value;
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
             var logger = Logger;
@@ -97,11 +99,25 @@ namespace Topomatic.ToolBridge.Tools
             try
             {
                 var tlcModel = LoadTlcModel(scriptPath);
+                string consoleOutput = null;
                 try
                 {
-                    tlcModel.BeginUpdate();
-                    tlcModel.EndUpdate();
-                    SetParameters(tlcModel, args);
+                    var firstOutput = string.Empty;
+                    using (var console = new ConsoleReader())
+                    {
+                        tlcModel.BeginUpdate();
+                        tlcModel.EndUpdate();
+                        firstOutput = console.Content;
+                    }
+                    var secondOutput = string.Empty;
+                    using (var console = new ConsoleReader())
+                    {
+                        SetParameters(tlcModel, args);
+                        secondOutput = console.Content;
+                    }
+
+                    consoleOutput = string.IsNullOrWhiteSpace(secondOutput) ? firstOutput : secondOutput;
+
                     tlcModel.GetModel();
                 }
                 catch (Exception ex)
@@ -129,7 +145,11 @@ namespace Topomatic.ToolBridge.Tools
                 sessionStorage.AddObject(guid, tlcEntity);
                 return new
                 {
-                    result = DwgUtils.CreateTlcObj(tlcEntity, guidStr, name),
+                    result = DwgUtils.CreateTlcObj(
+                        tlcEntity,
+                        guidStr,
+                        name,
+                        includeConsoleOutput ? consoleOutput : null),
                     description = "Созданная Tlc-модель.",
                     status = "Tlc-модель успешно создана."
                 };
@@ -191,7 +211,8 @@ namespace Topomatic.ToolBridge.Tools
                 },
                 'layerName': { 'type': 'string', 'description': 'Имя слоя Tlc-модели. Если не задано, слой не изменяется.' },
                 'colorMode': { 'type': 'string', 'description': 'Режим цвета Tlc-модели.', 'enum': ['Indexed', 'ByLayer', 'ByBlock'] },
-                'colorIndex': { 'type': 'integer', 'description': 'Индекс цвета Tlc-модели. Используется только при colorMode = Indexed.' }
+                'colorIndex': { 'type': 'integer', 'description': 'Индекс цвета Tlc-модели. Используется только при colorMode = Indexed.' },
+                'includeConsoleOutput': { 'type': 'boolean', 'description': 'Включать ли консольный вывод Tlc-скрипта в поле consoleOutput результата. По умолчанию false.', 'default': false }
               },
               'required': ['guid'],
               'additionalProperties': false
@@ -215,6 +236,7 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
+            var includeConsoleOutput = JsonUtils.GetBool(args, "includeConsoleOutput", false).Value;
             if (normal != null && normal.Value.Length <= 1e-9)
                 throw new BadRequestException("Нормаль Tlc-модели не может быть нулевой.");
             var (tlcEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
@@ -241,29 +263,57 @@ namespace Topomatic.ToolBridge.Tools
                     tlcEntity.Angle = angle.Value;
                 DwgUtils.ApplyEntityLayer(drawing, tlcEntity, layerName);
                 DwgUtils.ApplyEntityColor(tlcEntity, colorMode, colorIndex);
+                string consoleOutput = null;
                 try
                 {
                     tlcEntity.BeginChange();
                     try
                     {
+                        var firstOutput = string.Empty;
+                        var secondOutput = string.Empty;
                         if (scriptPath != null)
                         {
                             var curProps = tlcModel.GetAllProperties();
                             tlcModel = LoadTlcModel(scriptPath);
-                            tlcModel.BeginUpdate();
-                            tlcModel.EndUpdate();
-                            tlcModel.BeginUpdate();
-                            try
+
+                            using (var console = new ConsoleReader())
                             {
-                                tlcModel.ApplayOverridedProperties(curProps);
-                            }
-                            finally
-                            {
+                                tlcModel.BeginUpdate();
                                 tlcModel.EndUpdate();
+                                firstOutput = console.Content;
                             }
+
+                            using (var console = new ConsoleReader())
+                            {
+                                tlcModel.BeginUpdate();
+                                try
+                                {
+                                    tlcModel.ApplayOverridedProperties(curProps);
+                                }
+                                finally
+                                {
+                                    tlcModel.EndUpdate();
+                                }
+                                secondOutput = console.Content;
+                            }
+
                             tlcEntity.Element = tlcModel;
                         }
-                        SetParameters(tlcModel, args);
+
+                        var thirdOutput = string.Empty;
+                        using (var console = new ConsoleReader())
+                        {
+                            SetParameters(tlcModel, args);
+                            thirdOutput = console.Content;
+                        }
+
+                        if (!string.IsNullOrWhiteSpace(thirdOutput))
+                            consoleOutput = thirdOutput;
+                        else if (!string.IsNullOrWhiteSpace(secondOutput))
+                            consoleOutput = secondOutput;
+                        else
+                            consoleOutput = firstOutput;
+
                         tlcModel.GetModel();
                     }
                     finally
@@ -278,7 +328,11 @@ namespace Topomatic.ToolBridge.Tools
                 }
                 return new
                 {
-                    result = DwgUtils.CreateTlcObj(tlcEntity, guidStr, resultName),
+                    result = DwgUtils.CreateTlcObj(
+                        tlcEntity,
+                        guidStr,
+                        resultName,
+                        includeConsoleOutput ? consoleOutput : null),
                     description = "Обновленная Tlc-модель.",
                     status = "Tlc-модель успешно обновлена."
                 };
@@ -301,7 +355,8 @@ namespace Topomatic.ToolBridge.Tools
                   'type': 'object',
                   'description': 'Значения параметров Tlc-модели. Можно передать только изменяемые параметры из схемы, возвращаемой tlc_get_parameter_schema.',
                   'additionalProperties': true
-                }
+                },
+                'includeConsoleOutput': { 'type': 'boolean', 'description': 'Включать ли консольный вывод Tlc-скрипта в поле consoleOutput результата. По умолчанию false.', 'default': false }
               },
               'required': ['scriptPath'],
               'additionalProperties': false
@@ -313,24 +368,40 @@ namespace Topomatic.ToolBridge.Tools
         public object ExecuteTlcScript(Dictionary<string, object> args)
         {
             var scriptPath = JsonUtils.RequireString(args, "scriptPath");
+            var includeConsoleOutput = JsonUtils.GetBool(args, "includeConsoleOutput", false).Value;
             var tlcModel = LoadTlcModel(scriptPath);
             var meshBounds = BoundingBox3D.Empty;
             try
             {
-                tlcModel.BeginUpdate();
-                tlcModel.EndUpdate();
-                SetParameters(tlcModel, args);
+                var firstOutput = string.Empty;
+                using (var console = new ConsoleReader())
+                {
+                    tlcModel.BeginUpdate();
+                    tlcModel.EndUpdate();
+                    firstOutput = console.Content;
+                }
+                var secondOutput = string.Empty;
+                using (var console = new ConsoleReader())
+                {
+                    SetParameters(tlcModel, args);
+                    secondOutput = console.Content;
+                }
+
+                var consoleOutput = string.IsNullOrWhiteSpace(secondOutput) ? firstOutput : secondOutput;
                 var geometryModel = tlcModel.GetModel();
                 if (geometryModel != null)
                     meshBounds = geometryModel.GetBounds();
+                var result = new Dictionary<string, object>
+                {
+                    ["name"] = tlcModel.Name,
+                    ["properties"] = SmdxUtils.CreatePropsArray(tlcModel.GetAllProperties()),
+                    ["meshBounds"] = DwgUtils.CreateBounds3DObj(meshBounds)
+                };
+                if (includeConsoleOutput)
+                    result["consoleOutput"] = consoleOutput;
                 return new
                 {
-                    result = new
-                    {
-                        name = tlcModel.Name,
-                        properties = SmdxUtils.CreatePropsArray(tlcModel.GetAllProperties()),
-                        meshBounds = DwgUtils.CreateBounds3DObj(meshBounds)
-                    },
+                    result,
                     description = "Результат выполнения Tlc-скрипта.",
                     status = "Скрипт успешно выполнен без ошибок."
                 };

@@ -560,7 +560,11 @@ namespace Topomatic.ToolBridge.Utils
             };
         }
 
-        public static object CreateTlcObj(DwgModel3DElement tlcEntity, string guid, string name)
+        public static object CreateTlcObj(
+            DwgModel3DElement tlcEntity,
+            string guid,
+            string name,
+            string consoleOutput = null)
         {
             var tlcModel = tlcEntity.Element as ConstructedModel3dElement ??
                 throw new ArgumentException("Element is not tlc model", nameof(tlcEntity));
@@ -569,28 +573,31 @@ namespace Topomatic.ToolBridge.Utils
             var geometryModel = tlcModel.GetModel();
             if (geometryModel != null)
                 meshBounds = geometryModel.GetBounds();
-            return new
+            var result = new Dictionary<string, object>
             {
-                guid,
-                name,
-                position = new { x = tlcEntity.Position.X, y = tlcEntity.Position.Y, z = tlcEntity.Position.Z },
-                scale = new { x = tlcEntity.Scale.X, y = tlcEntity.Scale.Y, z = tlcEntity.Scale.Z },
-                normal = new { x = tlcEntity.Normal.X, y = tlcEntity.Normal.Y, z = tlcEntity.Normal.Z },
-                angle = tlcEntity.Angle,
-                layerName = tlcEntity.Layer?.Name ?? "none",
-                colorMode = GetColorMode(tlcEntity.Color),
-                colorIndex = tlcEntity.Color.ColorIndex,
-                bounds = new
+                ["guid"] = guid,
+                ["name"] = name,
+                ["position"] = new { x = tlcEntity.Position.X, y = tlcEntity.Position.Y, z = tlcEntity.Position.Z },
+                ["scale"] = new { x = tlcEntity.Scale.X, y = tlcEntity.Scale.Y, z = tlcEntity.Scale.Z },
+                ["normal"] = new { x = tlcEntity.Normal.X, y = tlcEntity.Normal.Y, z = tlcEntity.Normal.Z },
+                ["angle"] = tlcEntity.Angle,
+                ["layerName"] = tlcEntity.Layer?.Name ?? "none",
+                ["colorMode"] = GetColorMode(tlcEntity.Color),
+                ["colorIndex"] = tlcEntity.Color.ColorIndex,
+                ["bounds"] = new
                 {
                     left = tlcEntity.Bounds.Left,
                     right = tlcEntity.Bounds.Right,
                     top = tlcEntity.Bounds.Top,
                     bottom = tlcEntity.Bounds.Bottom
                 },
-                meshBounds = CreateBounds3DObj(meshBounds),
-                type,
-                typeDescription
+                ["meshBounds"] = CreateBounds3DObj(meshBounds),
+                ["type"] = type,
+                ["typeDescription"] = typeDescription
             };
+            if (consoleOutput != null)
+                result["consoleOutput"] = consoleOutput;
+            return result;
         }
 
         public static object CreateBounds3DObj(BoundingBox3D bounds)
