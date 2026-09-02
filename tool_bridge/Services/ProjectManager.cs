@@ -52,8 +52,6 @@ namespace Topomatic.ToolBridge.Services
             };
             foreach (var child in projectModel.GetChilds())
             {
-                if (child.Uri == null || string.IsNullOrWhiteSpace(child.ModelType))
-                    continue;
                 var absUri = child.Uri.AsAbsoluteUri;
                 var index = absUri.IndexOf(root.Name);
                 if (index < 0)
@@ -114,6 +112,22 @@ namespace Topomatic.ToolBridge.Services
                 }
                 node.Model = child;
             }
+
+            // Фильтрация от поврежденных элементов проекта
+            var stack = new Stack<ProjectNode>();
+            stack.Push(root);
+            while (stack.Count > 0)
+            {
+                var node = stack.Pop();
+                foreach (var child in node.Children.ToList())
+                {
+                    if (child.Uri == null || string.IsNullOrEmpty(child.Type))
+                        node.Children.Remove(child);
+                    else
+                        stack.Push(child);
+                }
+            }
+
             return root;
         }
 
