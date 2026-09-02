@@ -42,11 +42,11 @@ namespace Topomatic.ToolBridge.Tools
         {
             return new
             {
-                name = projectNode.Name,
-                uri = projectNode.Uri.AsAbsoluteUri,
-                relativePath = projectNode.RelativePath,
-                type = projectNode.Type,
-                typeDescription = projectNode.TypeDescription,
+                name = projectNode.Name ?? "none",
+                uri = projectNode.Uri?.AsAbsoluteUri ?? "none",
+                relativePath = projectNode.RelativePath ?? "none",
+                type = projectNode.Type ?? "none",
+                typeDescription = projectNode.TypeDescription ?? "none",
                 children = projectNode.Children.Select(n => CreateProjectElement(n)).ToArray()
             };
         }

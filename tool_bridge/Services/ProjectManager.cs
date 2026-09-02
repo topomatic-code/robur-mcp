@@ -52,6 +52,8 @@ namespace Topomatic.ToolBridge.Services
             };
             foreach (var child in projectModel.GetChilds())
             {
+                if (child.Uri == null || string.IsNullOrWhiteSpace(child.ModelType))
+                    continue;
                 var absUri = child.Uri.AsAbsoluteUri;
                 var index = absUri.IndexOf(root.Name);
                 if (index < 0)
