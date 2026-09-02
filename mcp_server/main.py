@@ -314,6 +314,12 @@ class LocalHttpSecurityMiddleware:
 async def lifespan(_: Starlette):
     await asyncio.to_thread(tool_bridge.connect)
     try:
+        # Одного открытия дескриптора named pipe недостаточно, чтобы мост мог
+        # выполнить impersonation и проверить клиента: Windows связывает его
+        # контекст с первым прочитанным сообщением. Выполняем handshake при
+        # запуске, чтобы MCP-процесс занял мост и прошёл проверку до того, как
+        # Uvicorn начнёт принимать HTTP-запросы.
+        await asyncio.to_thread(tool_bridge.request, "ping", {})
         async with session_manager.run():
             yield
     finally:
