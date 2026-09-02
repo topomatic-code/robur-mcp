@@ -36,6 +36,7 @@ namespace Topomatic.ToolBridge.Dialogs
             toolsPanel.SuspendLayout();
             try
             {
+                m_SelectedRow = null;
                 toolsPanel.Controls.Clear();
                 foreach (var toolConfig in m_ToolSettings.ToolConfigs)
                 {
@@ -47,6 +48,10 @@ namespace Topomatic.ToolBridge.Dialogs
                     toolsPanel.Controls.Add(row);
                 }
                 UpdateRowWidths();
+
+                var firstRow = toolsPanel.Controls.OfType<ToggleRow>().FirstOrDefault();
+                if (firstRow != null)
+                    SelectRow(firstRow);
             }
             finally
             {
@@ -57,8 +62,16 @@ namespace Topomatic.ToolBridge.Dialogs
         private void ToolRow_SelectionRequested(object sender, EventArgs e)
         {
             var selectedRow = sender as ToggleRow;
-            if (selectedRow == null || m_SelectedRow == selectedRow)
+            if (selectedRow == null)
                 return;
+
+            if (m_SelectedRow != selectedRow)
+                SelectRow(selectedRow);
+            selectedRow.FocusToggle();
+        }
+
+        private void SelectRow(ToggleRow selectedRow)
+        {
             if (m_SelectedRow != null)
                 m_SelectedRow.Selected = false;
             m_SelectedRow = selectedRow;
@@ -67,6 +80,41 @@ namespace Topomatic.ToolBridge.Dialogs
             toolInspector.SelectedObjects = new object[] { toolConfig };
             schemaBox.Text = toolConfig.InputSchema;
             ApplyJsonStyle();
+        }
+
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            const long previousKeyStateMask = 1L << 30;
+
+            if (toolsPanel.ContainsFocus && (keyData == Keys.Up || keyData == Keys.Down))
+            {
+                var isAutoRepeat = (msg.LParam.ToInt64() & previousKeyStateMask) != 0;
+                if (!isAutoRepeat)
+                    MoveSelection(keyData == Keys.Up ? -1 : 1);
+                return true;
+            }
+
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        private void MoveSelection(int offset)
+        {
+            var rows = toolsPanel.Controls.OfType<ToggleRow>().ToArray();
+            if (rows.Length == 0)
+                return;
+
+            var currentIndex = Array.IndexOf(rows, m_SelectedRow);
+            var nextIndex = currentIndex < 0
+                ? (offset < 0 ? rows.Length - 1 : 0)
+                : Math.Max(0, Math.Min(rows.Length - 1, currentIndex + offset));
+            var nextRow = rows[nextIndex];
+
+            if (nextRow == m_SelectedRow)
+                return;
+
+            SelectRow(nextRow);
+            nextRow.FocusToggle();
+            toolsPanel.ScrollControlIntoView(nextRow);
         }
 
         private void ApplyJsonStyle()

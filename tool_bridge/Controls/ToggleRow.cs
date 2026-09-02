@@ -62,6 +62,8 @@ namespace Topomatic.ToolBridge.Controls
 
         public bool Checked => m_ToggleButton.Checked;
 
+        public void FocusToggle() => m_ToggleButton.Focus();
+
         private void SelectionControl_Click(object sender, EventArgs e) => SelectionRequested?.Invoke(this, EventArgs.Empty);
         private void ToggleButton_CheckedChanged(object sender, EventArgs e) => CheckedChanged?.Invoke(this, EventArgs.Empty);
 
