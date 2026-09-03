@@ -123,10 +123,12 @@ namespace Topomatic.ToolBridge
                 if (process != null)
                     StopProcess(process, lifetimeJob);
                 m_Logger.PublicError("Failed to start MCP server: " + startupError);
+                m_Logger.SystemError("Failed to start MCP server: " + startupError);
                 return;
             }
 
             m_Logger.PublicInfo("MCP server started.");
+            m_Logger.SystemInfo("MCP server started.");
         }
 
         public void Shutdown()
@@ -272,6 +274,7 @@ namespace Topomatic.ToolBridge
             WaitForRedirectedOutput(process);
             DisposeProcess(process);
             m_Logger.PublicWarning($"MCP server exited with code {exitCode}.");
+            m_Logger.SystemWarning($"MCP server exited with code {exitCode}.");
         }
 
         private void OnMcpServerDataReceived(object sender, DataReceivedEventArgs e)
@@ -334,6 +337,7 @@ namespace Topomatic.ToolBridge
             catch (Exception ex)
             {
                 m_Logger.PublicError("Failed to stop MCP server process: " + ex.Message);
+                m_Logger.SystemError("Failed to stop MCP server process: " + ex.Message);
             }
             finally
             {

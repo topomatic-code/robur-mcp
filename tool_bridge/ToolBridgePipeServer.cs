@@ -174,6 +174,7 @@ namespace Topomatic.ToolBridge
                 {
                     m_Locked = true;
                     m_Logger.PublicWarning("Pipe client disconnected. Restart the pipe bridge to accept another client.");
+                    m_Logger.SystemWarning("Pipe client disconnected. Restart the pipe bridge to accept another client.");
                 }
             }
             catch (OperationCanceledException)
@@ -194,6 +195,7 @@ namespace Topomatic.ToolBridge
                 {
                     m_Locked = true;
                     m_Logger.PublicError("Pipe server error: " + ex);
+                    m_Logger.SystemError("Pipe server error: " + ex);
                 }
             }
             finally
@@ -225,10 +227,11 @@ namespace Topomatic.ToolBridge
                             {
                                 m_Locked = true;
                                 m_Logger.PublicWarning("Pipe client belongs to a different Windows logon session.");
+                                m_Logger.SystemWarning("Pipe client belongs to a different Windows logon session.");
                                 return;
                             }
                             clientVerified = true;
-                            m_Logger.PublicInfo("Pipe client connected.");
+                            m_Logger.SystemInfo("Pipe client connected.");
                         }
 
                         var systemLoggingEnabled = m_Logger.SystemLoggingEnabled;
@@ -252,7 +255,7 @@ namespace Topomatic.ToolBridge
                         }
                         catch (JsonException ex)
                         {
-                            m_Logger.PublicWarning("Bad request: invalid JSON. " + ex);
+                            //m_Logger.PublicWarning("Bad request: invalid JSON. " + ex);
                             response = BridgeResponse.Fail(
                                 null,
                                 ErrorCodes.BadRequest,
@@ -313,7 +316,7 @@ namespace Topomatic.ToolBridge
         private BridgeResponse CreateInternalErrorResponse(string requestId, Exception exception)
         {
             var traceId = Guid.NewGuid().ToString("N");
-            m_Logger.PublicError($"Internal error [{traceId}]: {exception}");
+            //m_Logger.PublicError($"Internal error [{traceId}]: {exception}");
             return BridgeResponse.Fail(
                 requestId,
                 ErrorCodes.InternalError,
@@ -345,7 +348,7 @@ namespace Topomatic.ToolBridge
             }
             catch (Exception detailsException)
             {
-                m_Logger.PublicWarning($"Invalid error details omitted [{exception.Code}]: {detailsException}");
+                m_Logger.SystemWarning($"Invalid error details omitted [{exception.Code}]: {detailsException}");
                 return null;
             }
         }

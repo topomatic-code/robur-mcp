@@ -48,6 +48,7 @@ namespace Topomatic.ToolBridge
                 throw;
             }
             m_Logger.PublicInfo("Pipe server started.");
+            m_Logger.SystemInfo("Pipe server started.");
         }
 
         public void Shutdown()
@@ -57,6 +58,7 @@ namespace Topomatic.ToolBridge
             m_Server.Dispose();
             m_Server = null;
             m_Logger.PublicInfo("Pipe server stopped.");
+            m_Logger.SystemInfo("Pipe server stopped.");
         }
     }
 }
