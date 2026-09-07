@@ -313,6 +313,8 @@ def build_tool_bridge(
                 str(files.project_file),
                 "/target:Build",
                 "/property:Configuration=Release",
+                "/property:UseRoburReferenceAssemblies=true",
+                "/property:IntermediateOutputPath=obj\\Tpm\\",
                 "/verbosity:minimal",
             ],
             cwd=files.root,

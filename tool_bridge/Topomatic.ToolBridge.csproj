@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <RoburReferencesPath Condition="'$(UseRoburReferenceAssemblies)' == 'true'">$(MSBuildProjectDirectory)\references</RoburReferencesPath>
+    <RoburReferencesPath Condition="'$(UseRoburReferenceAssemblies)' != 'true'">$(MSBuildProjectDirectory)\..\Out\Bin</RoburReferencesPath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -37,8 +39,10 @@
     <AssemblyOriginatorKeyFile>Signature.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>packages\Newtonsoft.Json.13.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <SpecificVersion>True</SpecificVersion>
+      <HintPath>$(RoburReferencesPath)\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -52,82 +56,82 @@
     <Reference Include="System.Xml" />
     <Reference Include="Topomatic.ApplicationEnvironment, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.ApplicationEnvironment.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.ApplicationEnvironment.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.ApplicationPlatform, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.ApplicationPlatform.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.ApplicationPlatform.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Cad.Foundation, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Cad.Foundation.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Cad.Foundation.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Cad.View, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Cad.View.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Cad.View.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.ComponentModel, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.ComponentModel.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.ComponentModel.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Controls, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Controls.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Controls.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Culverts, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Culverts.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Culverts.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Dwg, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Dwg.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Dwg.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Dwg.Layer, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Dwg.Layer.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Dwg.Layer.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.FoundationClasses, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.FoundationClasses.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.FoundationClasses.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Landscaping, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Landscaping.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Landscaping.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Stg, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Stg.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Stg.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Tables, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Tables.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Tables.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Tables.Export, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Tables.Export.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Tables.Export.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Visualization, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Visualization.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Visualization.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Visualization.Runtime, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Visualization.Runtime.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Visualization.Runtime.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -211,7 +215,6 @@
     <Compile Include="Tools\TlcTools.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="packages.config" />
     <None Include="Signature.snk" />
     <None Include="tool_bridge.plugin">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -230,4 +233,10 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Target Name="ValidateRoburReferenceAssemblies" BeforeTargets="ResolveAssemblyReferences" Condition="'$(UseRoburReferenceAssemblies)' == 'true'">
+    <ItemGroup>
+      <RoburReference Include="@(Reference)" Condition="$([System.String]::Copy('%(Reference.Identity)').StartsWith('Topomatic.')) Or $([System.String]::Copy('%(Reference.Identity)').StartsWith('Newtonsoft.Json,'))" />
+    </ItemGroup>
+    <Error Condition="!Exists('%(RoburReference.HintPath)')" Text="Robur reference assembly is missing: %(RoburReference.HintPath). Generate it with Refasmer before building the TPM package." />
+  </Target>
 </Project>
