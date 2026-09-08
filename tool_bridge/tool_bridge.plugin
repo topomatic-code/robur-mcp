@@ -5,7 +5,8 @@
     }
   },
   "broadcasts": {
-    "projectopened": "tool_bridge_init_module",
+    "projectopened": "tool_bridge_project_opened",
+    "projectclose": "tool_bridge_project_closed",
     "tool_request": "generate_tools"
   },
   "actions": {

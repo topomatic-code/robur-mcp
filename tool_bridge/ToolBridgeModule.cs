@@ -9,6 +9,7 @@ using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.Cad.View;
 using Topomatic.ToolBridge.Dialogs;
 using Topomatic.ToolBridge.Dialogs.Wrappers;
+using Topomatic.ToolBridge.Services;
 using Topomatic.ToolBridge.Settings;
 using Topomatic.ToolBridge.Tools;
 
@@ -19,11 +20,17 @@ namespace Topomatic.ToolBridge
     {
         private const string SystemLogDirectoryPathTemplate = @"%UserAppDataPath%\Support\robur-mcp\logs";
 
-        [cmd("tool_bridge_init_module")]
-        private void InitModule()
+        [cmd("tool_bridge_project_opened")]
+        private void ProjectOpened()
         {
             if (!McpServerBootstrap.Instance.ServerRunning && McpSettings.AutoRun)
                 McpRun();
+        }
+
+        [cmd("tool_bridge_project_closed")]
+        private void ProjectClosed()
+        {
+            ObjectStorage.Instance.Clear();
         }
 
         [cmd("tool_bridge_log")]

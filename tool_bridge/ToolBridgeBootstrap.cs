@@ -33,8 +33,7 @@ namespace Topomatic.ToolBridge
         {
             if (m_Server != null)
                 return;
-            var sessionStorage = new ObjectStorage();
-            var toolManager = new ToolManager(sessionStorage, m_Logger, cadViewProvider);
+            var toolManager = new ToolManager(ObjectStorage.Instance, m_Logger, cadViewProvider);
             toolManager.Initialize();
             var server = new ToolBridgePipeServer("robur_tool_bridge", toolManager, m_Logger);
             try

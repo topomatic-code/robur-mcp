@@ -10,12 +10,24 @@ namespace Topomatic.ToolBridge.Services
     {
         private const int PruneIntervalOperations = 50;
 
+        private static ObjectStorage m_Instance;
+
+        public static ObjectStorage Instance
+        {
+            get
+            {
+                if (m_Instance == null)
+                    m_Instance = new ObjectStorage();
+                return m_Instance;
+            }
+        }
+
         private readonly object m_SyncRoot;
         private readonly Dictionary<Guid, WeakReference<object>> m_Objects;
         private ConditionalWeakTable<object, GuidBox> m_Guids;
         private int m_OperationsSinceLastPrune;
 
-        public ObjectStorage()
+        private ObjectStorage()
         {
             m_SyncRoot = new object();
             m_Objects = new Dictionary<Guid, WeakReference<object>>();
