@@ -1,0 +1,55 @@
+name: Сборка TPM
+
+run-name: TPM ${{ inputs.version }} — ${{ github.actor }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Версия пакета без v, например 0.1.2"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Сборка пакета
+    runs-on: windows-2022
+    timeout-minutes: 30
+
+    defaults:
+      run:
+        shell: pwsh
+
+    env:
+      PYTHONUTF8: "1"
+      TPM_VERSION: ${{ inputs.version }}
+
+    steps:
+      - name: Получить исходники
+        uses: actions/checkout@v6
+
+      - name: Подготовить Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          architecture: x64
+
+      - name: Подготовить MSBuild
+        uses: microsoft/setup-msbuild@v3
+
+      - name: Установить зависимости
+        run: python -m pip install -r scripts/requirements.txt
+
+      - name: Собрать TPM
+        run: python scripts/build_tpm.py --version "$env:TPM_VERSION"
+
+      - name: Сохранить пакет
+        uses: actions/upload-artifact@v7
+        with:
+          name: robur-mcp-${{ inputs.version }}
+          path: build/*.tpm
+          if-no-files-found: error
+          retention-days: 30
