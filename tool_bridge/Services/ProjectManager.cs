@@ -222,7 +222,7 @@ namespace Topomatic.ToolBridge.Services
                 throw new PreconditionFailedException(e.Message, innerException: e);
             }
 
-            return FindNodes(n => n.Name.Equals(newName)).SingleOrDefault();
+            return FindNodes(n => n.Name.Equals(newName.Split('/').Last())).SingleOrDefault();
         }
 
         public ProjectNode ReorderNode(URI nodeUri, bool upDirection)
