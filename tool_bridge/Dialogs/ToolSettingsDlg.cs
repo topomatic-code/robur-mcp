@@ -61,6 +61,12 @@ namespace Topomatic.ToolBridge.Dialogs
             }
         }
 
+        protected override void OnShown(EventArgs e)
+        {
+            base.OnShown(e);
+            m_SelectedRow?.FocusToggle();
+        }
+
         private void ToolRow_SelectionRequested(object sender, EventArgs e)
         {
             var selectedRow = sender as ToggleRow;
