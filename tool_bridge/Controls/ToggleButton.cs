@@ -27,7 +27,7 @@ namespace Topomatic.ToolBridge.Controls
             BackColor = Color.Transparent;
             Cursor = Cursors.Hand;
             MinimumSize = new Size(36, 20);
-            Size = new Size(56, 28);
+            Size = new Size(36, 20);
             Text = string.Empty;
         }
 
@@ -57,7 +57,8 @@ namespace Topomatic.ToolBridge.Controls
                 ? (Checked ? CheckedColor : UncheckedColor)
                 : DisabledColor;
 
-            const float outlineWidth = 2.0f;
+            var scale = System.Math.Min(Width / 36.0f, Height / 20.0f);
+            var outlineWidth = 2.0f * scale;
             var trackBounds = new RectangleF(
                 outlineWidth / 2,
                 outlineWidth / 2,
@@ -71,7 +72,7 @@ namespace Topomatic.ToolBridge.Controls
                 graphics.DrawPath(outlinePen, trackPath);
             }
 
-            var thumbPadding = 4.0f;
+            var thumbPadding = 4.0f * scale;
             var thumbSize = Height - 2 * thumbPadding;
             var thumbX = Checked
                 ? Width - thumbPadding - thumbSize

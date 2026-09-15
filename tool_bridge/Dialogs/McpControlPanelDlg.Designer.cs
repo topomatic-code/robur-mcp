@@ -35,16 +35,16 @@
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(700, 562);
+            this.btnCancel.Location = new System.Drawing.Point(350, 281);
             // 
             // btnOk
             // 
-            this.btnOk.Location = new System.Drawing.Point(538, 562);
+            this.btnOk.Location = new System.Drawing.Point(269, 281);
             // 
             // dividerLine
             // 
-            this.dividerLine.Location = new System.Drawing.Point(0, 547);
-            this.dividerLine.Size = new System.Drawing.Size(874, 2);
+            this.dividerLine.Location = new System.Drawing.Point(0, 274);
+            this.dividerLine.Size = new System.Drawing.Size(437, 2);
             // 
             // tbRunMcp
             // 
@@ -52,42 +52,42 @@
             this.tbRunMcp.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.tbRunMcp.BackColor = System.Drawing.Color.Transparent;
             this.tbRunMcp.Cursor = System.Windows.Forms.Cursors.Hand;
-            this.tbRunMcp.Location = new System.Drawing.Point(794, 12);
+            this.tbRunMcp.Location = new System.Drawing.Point(389, 6);
             this.tbRunMcp.MinimumSize = new System.Drawing.Size(36, 20);
             this.tbRunMcp.Name = "tbRunMcp";
-            this.tbRunMcp.Size = new System.Drawing.Size(56, 28);
+            this.tbRunMcp.Size = new System.Drawing.Size(36, 20);
             this.tbRunMcp.TabIndex = 101;
             this.tbRunMcp.UseVisualStyleBackColor = false;
             // 
             // lblRunMcp
             // 
             this.lblRunMcp.AutoSize = true;
-            this.lblRunMcp.Location = new System.Drawing.Point(12, 15);
+            this.lblRunMcp.Location = new System.Drawing.Point(6, 9);
             this.lblRunMcp.Name = "lblRunMcp";
-            this.lblRunMcp.Size = new System.Drawing.Size(244, 25);
+            this.lblRunMcp.Size = new System.Drawing.Size(122, 13);
             this.lblRunMcp.TabIndex = 102;
             this.lblRunMcp.Text = "Запустить MCP-сервер";
             // 
             // piSettings
             // 
-            this.piSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.piSettings.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.piSettings.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(238)))), ((int)(((byte)(237)))), ((int)(((byte)(232)))));
             this.piSettings.DescriptionVisible = false;
-            this.piSettings.Location = new System.Drawing.Point(12, 52);
+            this.piSettings.Location = new System.Drawing.Point(6, 32);
             this.piSettings.Name = "piSettings";
             this.piSettings.SelectedIndex = -1;
             this.piSettings.SelectMode = Topomatic.Controls.ObjectInspection.PropertyInspector.SelectMode.Parallel;
-            this.piSettings.Size = new System.Drawing.Size(850, 486);
-            this.piSettings.SpliterPosition = 425;
+            this.piSettings.Size = new System.Drawing.Size(425, 237);
+            this.piSettings.SpliterPosition = 213;
             this.piSettings.TabIndex = 103;
             // 
             // McpControlPanelDlg
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(192F, 192F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(874, 629);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(437, 315);
             this.Controls.Add(this.tbRunMcp);
             this.Controls.Add(this.lblRunMcp);
             this.Controls.Add(this.piSettings);

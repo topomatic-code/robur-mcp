@@ -13,11 +13,15 @@ namespace Topomatic.ToolBridge.Controls
 
         public ToggleRow(string label, bool enabled)
         {
-            AutoScaleMode = AutoScaleMode.Dpi;
+            SuspendLayout();
+            // Use the same design-time font metrics as SimpleDlg and its derived dialogs.
+            AutoScaleDimensions = new SizeF(6F, 13F);
+            AutoScaleMode = AutoScaleMode.Font;
             BackColor = SystemColors.Window;
-            Height = 44;
+            Height = 22;
             Margin = new Padding(0, 0, 0, 1);
-            MinimumSize = new Size(200, 44);
+            Padding = new Padding(6, 0, 6, 0);
+            MinimumSize = new Size(100, 22);
             TabStop = false;
             m_Label = new Label
             {
@@ -38,6 +42,7 @@ namespace Topomatic.ToolBridge.Controls
             m_ToggleButton.Click += SelectionControl_Click;
             m_ToggleButton.Enter += SelectionControl_Click;
             m_ToggleButton.CheckedChanged += ToggleButton_CheckedChanged;
+            ResumeLayout(true);
         }
 
         public event EventHandler SelectionRequested;
@@ -67,22 +72,20 @@ namespace Topomatic.ToolBridge.Controls
         private void SelectionControl_Click(object sender, EventArgs e) => SelectionRequested?.Invoke(this, EventArgs.Empty);
         private void ToggleButton_CheckedChanged(object sender, EventArgs e) => CheckedChanged?.Invoke(this, EventArgs.Empty);
 
-        protected override void OnResize(EventArgs e)
+        protected override void OnLayout(LayoutEventArgs e)
         {
-            const int horizontalPadding = 12;
-
-            base.OnResize(e);
+            base.OnLayout(e);
 
             if (m_Label == null || m_ToggleButton == null)
                 return;
             m_ToggleButton.Location = new Point(
-                ClientSize.Width - m_ToggleButton.Width - horizontalPadding,
+                ClientSize.Width - m_ToggleButton.Width - Padding.Right,
                 (ClientSize.Height - m_ToggleButton.Height) / 2
             );
             m_Label.SetBounds(
-                horizontalPadding,
+                Padding.Left,
                 0,
-                Math.Max(0, m_ToggleButton.Left - horizontalPadding * 2),
+                Math.Max(0, m_ToggleButton.Left - Padding.Left - Padding.Right),
                 ClientSize.Height
             );
         }

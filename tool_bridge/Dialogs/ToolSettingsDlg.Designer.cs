@@ -46,38 +46,38 @@
             // 
             // btnCancel
             // 
-            this.btnCancel.Location = new System.Drawing.Point(1400, 1062);
+            this.btnCancel.Location = new System.Drawing.Point(700, 531);
             // 
             // btnOk
             // 
-            this.btnOk.Location = new System.Drawing.Point(1238, 1062);
+            this.btnOk.Location = new System.Drawing.Point(619, 531);
             // 
             // dividerLine
             // 
-            this.dividerLine.Location = new System.Drawing.Point(0, 1047);
-            this.dividerLine.Size = new System.Drawing.Size(1574, 2);
+            this.dividerLine.Location = new System.Drawing.Point(0, 524);
+            this.dividerLine.Size = new System.Drawing.Size(787, 2);
             // 
             // toolsPanel
             // 
-            this.toolsPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.toolsPanel.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.toolsPanel.AutoScroll = true;
             this.toolsPanel.BackColor = System.Drawing.SystemColors.Window;
             this.toolsPanel.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.toolsPanel.Location = new System.Drawing.Point(0, 0);
             this.toolsPanel.Name = "toolsPanel";
-            this.toolsPanel.Padding = new System.Windows.Forms.Padding(4);
-            this.toolsPanel.Size = new System.Drawing.Size(716, 1021);
+            this.toolsPanel.Padding = new System.Windows.Forms.Padding(2);
+            this.toolsPanel.Size = new System.Drawing.Size(358, 511);
             this.toolsPanel.TabIndex = 101;
             this.toolsPanel.WrapContents = false;
             // 
             // mainSplit
             // 
-            this.mainSplit.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.mainSplit.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.mainSplit.Location = new System.Drawing.Point(13, 13);
+            this.mainSplit.Location = new System.Drawing.Point(7, 7);
             this.mainSplit.Name = "mainSplit";
             // 
             // mainSplit.Panel1
@@ -87,15 +87,13 @@
             // mainSplit.Panel2
             // 
             this.mainSplit.Panel2.Controls.Add(this.sideSplit);
-            this.mainSplit.Size = new System.Drawing.Size(1549, 1025);
-            this.mainSplit.SplitterDistance = 720;
+            this.mainSplit.Size = new System.Drawing.Size(775, 513);
+            this.mainSplit.SplitterDistance = 360;
             this.mainSplit.TabIndex = 102;
             // 
             // sideSplit
             // 
-            this.sideSplit.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.sideSplit.Dock = System.Windows.Forms.DockStyle.Fill;
             this.sideSplit.Location = new System.Drawing.Point(0, 0);
             this.sideSplit.Name = "sideSplit";
             this.sideSplit.Orientation = System.Windows.Forms.Orientation.Horizontal;
@@ -106,55 +104,49 @@
             // 
             // sideSplit.Panel2
             // 
-            this.sideSplit.Panel2.Controls.Add(this.lbInputSchema);
             this.sideSplit.Panel2.Controls.Add(this.schemaBox);
-            this.sideSplit.Size = new System.Drawing.Size(825, 1025);
-            this.sideSplit.SplitterDistance = 495;
+            this.sideSplit.Panel2.Controls.Add(this.lbInputSchema);
+            this.sideSplit.Size = new System.Drawing.Size(411, 513);
+            this.sideSplit.SplitterDistance = 248;
             this.sideSplit.TabIndex = 0;
             // 
             // toolInspector
             // 
-            this.toolInspector.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
+            this.toolInspector.Dock = System.Windows.Forms.DockStyle.Fill;
             this.toolInspector.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(238)))), ((int)(((byte)(237)))), ((int)(((byte)(232)))));
             this.toolInspector.DescriptionVisible = false;
             this.toolInspector.Location = new System.Drawing.Point(0, 0);
             this.toolInspector.Name = "toolInspector";
             this.toolInspector.SelectedIndex = -1;
             this.toolInspector.SelectMode = Topomatic.Controls.ObjectInspection.PropertyInspector.SelectMode.Parallel;
-            this.toolInspector.Size = new System.Drawing.Size(822, 496);
-            this.toolInspector.SpliterPosition = 411;
+            this.toolInspector.Size = new System.Drawing.Size(411, 248);
+            this.toolInspector.SpliterPosition = 206;
             this.toolInspector.TabIndex = 0;
             // 
             // schemaBox
             // 
-            this.schemaBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.schemaBox.Location = new System.Drawing.Point(0, 33);
+            this.schemaBox.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.schemaBox.Location = new System.Drawing.Point(0, 17);
             this.schemaBox.Name = "schemaBox";
             this.schemaBox.ReadOnly = true;
-            this.schemaBox.Size = new System.Drawing.Size(822, 489);
+            this.schemaBox.Size = new System.Drawing.Size(411, 244);
             this.schemaBox.TabIndex = 0;
             this.schemaBox.Text = "";
             // 
             // lbInputSchema
             // 
-            this.lbInputSchema.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.lbInputSchema.AutoSize = true;
-            this.lbInputSchema.Location = new System.Drawing.Point(5, 5);
+            this.lbInputSchema.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lbInputSchema.Location = new System.Drawing.Point(0, 0);
             this.lbInputSchema.Name = "lbInputSchema";
-            this.lbInputSchema.Size = new System.Drawing.Size(203, 25);
+            this.lbInputSchema.Size = new System.Drawing.Size(411, 17);
             this.lbInputSchema.TabIndex = 1;
             this.lbInputSchema.Text = "Схема параметров";
             // 
             // ToolSettingsDlg
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(192F, 192F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
-            this.ClientSize = new System.Drawing.Size(1574, 1129);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(787, 565);
             this.Controls.Add(this.mainSplit);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.Sizable;
             this.MaximizeBox = true;

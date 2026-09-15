@@ -27,6 +27,8 @@ namespace Topomatic.ToolBridge.Dialogs
         {
             m_ToolSettings = toolSettings;
             InitializeComponent();
+            lbInputSchema.FontChanged += InputSchemaLabel_FontChanged;
+            UpdateInputSchemaLabelHeight();
             toolsPanel.ClientSizeChanged += ToolsPanel_SizeChanged;
         }
 
@@ -139,14 +141,18 @@ namespace Topomatic.ToolBridge.Dialogs
             toolConfig.Enabled = selectedRow.Checked;
         }
 
+        private void InputSchemaLabel_FontChanged(object sender, EventArgs e) => UpdateInputSchemaLabelHeight();
+
+        private void UpdateInputSchemaLabelHeight() => lbInputSchema.Height = lbInputSchema.PreferredSize.Height;
+
         private void ToolsPanel_SizeChanged(object sender, EventArgs e) => UpdateRowWidths();
 
         private void UpdateRowWidths()
         {
-            var width = Math.Max(100, toolsPanel.ClientSize.Width - toolsPanel.Padding.Horizontal);
+            var width = Math.Max(0, toolsPanel.ClientSize.Width - toolsPanel.Padding.Horizontal);
             foreach (var row in toolsPanel.Controls.OfType<ToggleRow>())
             {
-                row.Width = width;
+                row.Width = Math.Max(row.MinimumSize.Width, width - row.Margin.Horizontal);
             }
         }
     }
