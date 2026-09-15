@@ -36,6 +36,35 @@ namespace Topomatic.ToolBridge.Dialogs
                 $"Подтвердите выполнение операции:";
         }
 
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            ToolApprovementResult result;
+            switch (keyData)
+            {
+                case Keys.D1:
+                case Keys.NumPad1:
+                    result = ToolApprovementResult.AllowOnce;
+                    break;
+                case Keys.D2:
+                case Keys.NumPad2:
+                    result = ToolApprovementResult.AllowForSession;
+                    break;
+                case Keys.D3:
+                case Keys.NumPad3:
+                    result = ToolApprovementResult.AllowPermanently;
+                    break;
+                case Keys.D4:
+                case Keys.NumPad4:
+                    result = ToolApprovementResult.Deny;
+                    break;
+                default:
+                    return base.ProcessCmdKey(ref msg, keyData);
+            }
+
+            SelectResult(result);
+            return true;
+        }
+
         private void AllowOnceOption_Selected(object sender, EventArgs e)
         {
             SelectResult(ToolApprovementResult.AllowOnce);
