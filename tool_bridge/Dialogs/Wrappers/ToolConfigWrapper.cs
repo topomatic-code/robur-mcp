@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Reflection;
 using Topomatic.ComponentModel;
 using Topomatic.ToolBridge.Dialogs.Converters;
 using Topomatic.ToolBridge.Settings;
@@ -50,9 +51,13 @@ namespace Topomatic.ToolBridge.Dialogs.Wrappers
         [DisplayName("Идемпотентный")]
         public bool Idempotent => m_ToolConfig.Idempotent;
 
+        [Obfuscation(Exclude = true, StripAfterObfuscation = true)]
+        private bool ApprovalScopeBrowsable => m_ToolConfig.Destructive || !m_ToolConfig.ReadOnly;
+
         [Category(CATEGORY_SETTINGS)]
         [DisplayName("Режим подтверждения выполнения")]
         [PropertyTypeConverter(typeof(ToolApprovalScopeConverter))]
+        [ConditionalBrowsable(nameof(ApprovalScopeBrowsable))]
         public ToolApprovalScope ApprovalScope { get; set; }
 
         public void SaveChanges()
