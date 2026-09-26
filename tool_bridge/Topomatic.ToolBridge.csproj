@@ -59,6 +59,11 @@
       <HintPath>$(RoburReferencesPath)\Topomatic.Acax.Export.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Topomatic.Acax.Import.Dxf, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Acax.Import.Dxf.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Topomatic.ApplicationEnvironment, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(RoburReferencesPath)\Topomatic.ApplicationEnvironment.dll</HintPath>

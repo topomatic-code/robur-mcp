@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Windows.Forms;
 using Topomatic.Acax.Export;
+using Topomatic.Acax.Import.Dxf;
 using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Core;
 using Topomatic.ApplicationPlatform.Plugins;
@@ -400,9 +401,18 @@ namespace Topomatic.ToolBridge.Services
             cadView.ShowUCSSetting = true;
             cadView.MultiSelect = true;
             cadView.DraftingSettings.DrawGrid = true;
+
             cadView.ContextMenu = new ContextMenu(
                 new[]
                 {
+                    new MenuItem("Загрузить чертеж", (s, e) => {
+
+                        AcaxImporter.ImportWithDialog(drawing, out var fileName);
+                        cadView.Unlock();
+                        cadView.Invalidate();
+                        cadView.SolveLimits();
+
+                    }),
                     new MenuItem("Сохранить чертеж", (s, e) => {
 
                         var providers = DrawingExportProvider.GetProviders().Values.ToArray();
