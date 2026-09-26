@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{2DC42E90-CB22-474A-926E-6635505072D9}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>ToolBridge_v0_1_0_ApiChecker</RootNamespace>
+    <AssemblyName>ToolBridge_v0.1.0_ApiChecker</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\..\..\..\Out\Bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\..\..\..\Out\Bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
+      <HintPath>references\Newtonsoft.Json.dll</HintPath>
+      <SpecificVersion>True</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Topomatic.ApplicationPlatform">
+      <HintPath>references\Topomatic.ApplicationPlatform.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.ToolBridge, Version=0.1.0.0, Culture=neutral, PublicKeyToken=0af0f61cef2ab3a8">
+      <HintPath>references\Topomatic.ToolBridge.dll</HintPath>
+      <SpecificVersion>True</SpecificVersion>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Cad.Foundation">
+      <HintPath>references\Topomatic.Cad.Foundation.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Cad.View">
+      <HintPath>references\Topomatic.Cad.View.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Dwg">
+      <HintPath>references\Topomatic.Dwg.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Landscaping">
+      <HintPath>references\Topomatic.Landscaping.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Visualization">
+      <HintPath>references\Topomatic.Visualization.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Visualization.Runtime">
+      <HintPath>references\Topomatic.Visualization.Runtime.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Stg">
+      <HintPath>references\Topomatic.Stg.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.FoundationClasses">
+      <HintPath>references\Topomatic.FoundationClasses.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Tables">
+      <HintPath>references\Topomatic.Tables.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Tables.Export">
+      <HintPath>references\Topomatic.Tables.Export.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Module.cs" />
+    <Compile Include="ApiChecks.cs" />
+    <Compile Include="ApiChecks.Json.cs" />
+    <Compile Include="ApiChecks.Dwg.cs" />
+    <Compile Include="ApiChecks.Integration.cs" />
+    <Compile Include="LegacyProviderProbe.cs" />
+    <Compile Include="PluginHost.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="VerifyApiCoverage.ps1" />
+    <None Include="Verification\ApiSignatureProvider.cs" />
+    <None Include="tool_bridge_v0.1.0_api_checker.plugin">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>

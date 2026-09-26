@@ -1,0 +1,7 @@
+﻿{
+  "assemblies": {
+    "tool_bridge_tests": {
+      "assembly": "ToolBridge.Tests.dll, ToolBridge.Tests.PluginHost"
+    }
+  }
+}

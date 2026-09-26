@@ -11,6 +11,10 @@ tool_bridge/obj/
 tool_bridge/bin/
 tool_bridge/.vs/
 tool_bridge/packages/
+tests/tool_bridge/ToolBridge.Tests/obj/
+tests/tool_bridge/ToolBridge.Tests/.vs/
+tests/tool_bridge/ApiCheckers/ToolBridge_v0.1.0_ApiChecker/obj/
+tests/tool_bridge/ApiCheckers/ToolBridge_v0.1.0_ApiChecker/.vs/
 
 # Кэш Python
 __pycache__/
