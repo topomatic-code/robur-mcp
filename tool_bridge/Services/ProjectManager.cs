@@ -7,6 +7,7 @@ using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Core;
 using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.Cad.View;
+using Topomatic.Dwg.Layer;
 using Topomatic.FoundationClasses;
 using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services.Models;
@@ -16,6 +17,8 @@ namespace Topomatic.ToolBridge.Services
 {
     internal sealed class ProjectManager
     {
+        private const string QUICK_DWG_PREFIX = "quick_dwg";
+
         private static ProjectManager m_Instance;
 
         public static ProjectManager Instance
@@ -311,7 +314,8 @@ namespace Topomatic.ToolBridge.Services
                         Dynamic = window.CloseButton,
                         Window = window,
                         HasCadView = cadView != null,
-                        HasDrawing = DwgUtils.GetDrawing(cadView) != null
+                        HasDrawing = DwgUtils.GetDrawing(cadView) != null,
+                        IsQuickDwg = window.UID.StartsWith(QUICK_DWG_PREFIX)
                     }
                 );
             }
@@ -356,6 +360,54 @@ namespace Topomatic.ToolBridge.Services
             }
 
             return null;
+        }
+
+        public WindowInfo AddQuickDrawing(string windowName)
+        {
+            if (string.IsNullOrWhiteSpace(windowName))
+                throw new BadRequestException($"Передано некорректное имя окна (вкладки): {windowName}.");
+
+            if (windowName.Length > 20)
+                windowName = windowName.Substring(0, 17) + "...";
+
+            var activeProject = ApplicationHost.Current.ActiveProject;
+
+            if (activeProject == null)
+                return null;
+
+            var windows = activeProject.GetWindows();
+            if (windows.Any(w => string.Equals(w.Text, windowName)))
+                throw new PreconditionFailedException($"Проект уже содержит вкладку (окно) с именем {windowName}.");
+
+            var guid = Guid.NewGuid();
+            var uid = $"{QUICK_DWG_PREFIX}_{Guid.NewGuid()}";
+            var window = activeProject.AddDocumentWindow(uid);
+            window.Text = windowName;
+            window.CloseButton = true;
+            window.DisplayTabs = true;
+
+            var frame = window.AddCadViewFrame(Consts.ModelFrame, "Модель");
+            var cadView = frame.CadView;
+            cadView.ShowScreenRotationSetting = true;
+            cadView.ShowScreenScaleRatio = true;
+            cadView.ShowDriverSetting = true;
+            cadView.ShowUCSSetting = true;
+            cadView.MultiSelect = true;
+            cadView.DraftingSettings.DrawGrid = true;
+
+            var drawingLayer = new DrawingLayer() { Drawing = new Dwg.Drawing() };
+            cadView.AddLayer(drawingLayer);
+
+            return new WindowInfo()
+            {
+                Name = window.Text,
+                UID = window.UID,
+                Dynamic = window.CloseButton,
+                Window = window,
+                HasCadView = true,
+                HasDrawing = true,
+                IsQuickDwg = true
+            };
         }
     }
 }

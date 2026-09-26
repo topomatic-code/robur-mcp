@@ -367,6 +367,41 @@ namespace Topomatic.ToolBridge.Tools
             };
         }
 
+        [ToolDef(
+            Name = "project_add_quick_drawing",
+            Domain = ToolDomains.Project,
+            Description = "Создает новое окно (вкладку) с пустым быстрым чертежом в активном проекте.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'windowName': { 'type': 'string', 'description': 'Название нового окна (вкладки) с быстрым чертежом. Имена длиннее 20 символов сокращаются до первых 17 символов с многоточием. Итоговое имя должно быть уникальным среди окон активного проекта.' }
+              },
+              'required': ['windowName'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = false
+        )]
+        public object AddQuickDrawing(Dictionary<string, object> args)
+        {
+            var windowName = JsonUtils.RequireString(args, "windowName");
+
+            if (string.IsNullOrWhiteSpace(windowName))
+                throw new BadRequestException("Название окна (вкладки) не может быть пустым.");
+
+            var projectManager = ProjectManager.Instance;
+            var window = projectManager.AddQuickDrawing(windowName) ??
+                throw new PreconditionFailedException("Не удалось создать быстрый чертеж.");
+
+            return new
+            {
+                result = CreateWindowObj(window),
+                description = "Новое окно (вкладка) с быстрым чертежом.",
+                status = "Новое окно (вкладка) с быстрым чертежом успешно создано."
+            };
+        }
+
         public static object CreateWindowObj(WindowInfo windowInfo)
         {
             return new
@@ -375,7 +410,8 @@ namespace Topomatic.ToolBridge.Tools
                 windowInfo.UID,
                 windowInfo.Dynamic,
                 windowInfo.HasCadView,
-                windowInfo.HasDrawing
+                windowInfo.HasDrawing,
+                windowInfo.IsQuickDwg
             };
         }
     }
