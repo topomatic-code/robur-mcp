@@ -9,5 +9,6 @@ namespace Topomatic.ToolBridge.Services.Models
         public bool Dynamic { get; set; }
         public IDocumentWindow Window { get; set; }
         public bool HasCadView { get; set; }
+        public bool HasDrawing { get; set; }
     }
 }

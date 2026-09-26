@@ -6,9 +6,11 @@ using System.Linq;
 using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Core;
 using Topomatic.ApplicationPlatform.Plugins;
+using Topomatic.Cad.View;
 using Topomatic.FoundationClasses;
 using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services.Models;
+using Topomatic.ToolBridge.Utils;
 
 namespace Topomatic.ToolBridge.Services
 {
@@ -296,10 +298,10 @@ namespace Topomatic.ToolBridge.Services
 
             foreach (var window in ApplicationHost.Current.ActiveProject.GetWindows())
             {
-                var hasCadView = false;
+                CadView cadView = null;
 
                 if (window is IFramableDocumentWindow framable)
-                    hasCadView = framable.CadView != null;
+                    cadView = framable.CadView;
 
                 activeWindows.Add(
                     new WindowInfo()
@@ -308,7 +310,8 @@ namespace Topomatic.ToolBridge.Services
                         UID = window.UID,
                         Dynamic = window.CloseButton,
                         Window = window,
-                        HasCadView = hasCadView
+                        HasCadView = cadView != null,
+                        HasDrawing = DwgUtils.GetDrawing(cadView) != null
                     }
                 );
             }

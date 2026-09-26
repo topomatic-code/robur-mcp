@@ -374,7 +374,8 @@ namespace Topomatic.ToolBridge.Tools
                 windowInfo.Name,
                 windowInfo.UID,
                 windowInfo.Dynamic,
-                windowInfo.HasCadView
+                windowInfo.HasCadView,
+                windowInfo.HasDrawing
             };
         }
     }
