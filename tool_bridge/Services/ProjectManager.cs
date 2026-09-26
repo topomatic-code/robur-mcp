@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Windows.Forms;
+using Topomatic.Acax.Export;
 using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Core;
 using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.Cad.View;
+using Topomatic.Dwg;
 using Topomatic.Dwg.Layer;
 using Topomatic.FoundationClasses;
 using Topomatic.ToolBridge.Exceptions;
@@ -379,6 +383,8 @@ namespace Topomatic.ToolBridge.Services
             if (windows.Any(w => string.Equals(w.Text, windowName)))
                 throw new PreconditionFailedException($"Проект уже содержит вкладку (окно) с именем {windowName}.");
 
+            var drawing = new Drawing();
+
             var guid = Guid.NewGuid();
             var uid = $"{QUICK_DWG_PREFIX}_{Guid.NewGuid()}";
             var window = activeProject.AddDocumentWindow(uid);
@@ -394,8 +400,58 @@ namespace Topomatic.ToolBridge.Services
             cadView.ShowUCSSetting = true;
             cadView.MultiSelect = true;
             cadView.DraftingSettings.DrawGrid = true;
+            cadView.ContextMenu = new ContextMenu(
+                new[]
+                {
+                    new MenuItem("Сохранить чертеж", (s, e) => {
 
-            var drawingLayer = new DrawingLayer() { Drawing = new Dwg.Drawing() };
+                        var providers = DrawingExportProvider.GetProviders().Values.ToArray();
+                        var filters = providers.Select(p => $"{p.DisplayName} (*{p.Extention})|*{p.Extention}").ToArray();
+                        using (var saveDlg = new SaveFileDialog())
+                        {
+                            saveDlg.FileName = windowName.TrimEnd('.');
+
+                            if (windowName.EndsWith("."))
+                                saveDlg.FileName += "_";
+
+                            saveDlg.Filter = string.Join("|", filters);
+
+                            if (saveDlg.ShowDialog() != DialogResult.OK)
+                                return;
+
+                            var fileName = saveDlg.FileName;
+                            var provider = providers[saveDlg.FilterIndex - 1];
+                            provider.SaveToFile(fileName, drawing);
+                        }
+
+                    })
+                }
+            );
+
+            cadView.DynamicDraw += (pen, mousePos) =>
+            {
+                const int TEXT_MARGIN = 12;
+
+                var font = cadView.Font;
+                var text = FormattableString.Invariant($"X: {mousePos.X:0.00}, Y: {mousePos.Y:0.00}");
+                var textSize = TextRenderer.MeasureText(text, font);
+                var x = TEXT_MARGIN;
+                var y = cadView.Size.Height - textSize.Height - TEXT_MARGIN;
+
+                var graphics = pen.Graphics;
+                graphics.BeginGraphics();
+                try
+                {
+                    graphics.Color = Color.Yellow;
+                    graphics.DrawString(text, font, x, y);
+                }
+                finally
+                {
+                    graphics.EndGraphics();
+                }
+            };
+
+            var drawingLayer = new DrawingLayer() { Drawing = drawing };
             cadView.AddLayer(drawingLayer);
 
             return new WindowInfo()
