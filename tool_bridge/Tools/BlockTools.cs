@@ -368,6 +368,5 @@ namespace Topomatic.ToolBridge.Tools
                 }
             };
         }
-
     }
 }

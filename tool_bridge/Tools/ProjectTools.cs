@@ -228,5 +228,154 @@ namespace Topomatic.ToolBridge.Tools
                 status = "Папка успешно создана."
             };
         }
+
+        [ToolDef(
+            Name = "project_activate_model",
+            Domain = ToolDomains.Project,
+            Description = "Активирует модель проекта, открывая ее при необходимости.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'uri': { 'type': 'string', 'description': 'Полный глобальный uri модели проекта (из структуры активного проекта).' }
+              },
+              'required': ['uri'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object ActivateModel(Dictionary<string, object> args)
+        {
+            var uriStr = JsonUtils.RequireString(args, "uri");
+
+            if (string.IsNullOrWhiteSpace(uriStr))
+                throw new BadRequestException("URI элемента проекта не может быть пустым.");
+
+            var uri = new URI(uriStr);
+            var projectManager = ProjectManager.Instance;
+            var node = projectManager.ActivateModel(uri) ??
+                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}."); ;
+
+            return new
+            {
+                result = CreateProjectElement(node),
+                description = "Активированный элемент.",
+                status = "Элемент проекта успешно активирован."
+            };
+        }
+
+        [ToolDef(
+            Name = "project_get_active_windows",
+            Domain = ToolDomains.Project,
+            Description = "Возвращает список окон (вкладок) активной модели.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {},
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object GetActiveWindows(Dictionary<string, object> args)
+        {
+            var projectManager = ProjectManager.Instance;
+            var windows = projectManager.GetActiveWindows();
+
+            return new
+            {
+                result = new
+                {
+                    windowCount = windows.Count,
+                    windows = windows.Select(w => CreateWindowObj(w)).ToArray()
+                },
+                description = "Окна (вкладки) активной модели.",
+                status = "Окна (вкладки) активной модели успешно получены."
+            };
+        }
+
+        [ToolDef(
+            Name = "close_window",
+            Domain = ToolDomains.Project,
+            Description = "Закрывает окно (вкладку) активной модели по UID. Закрывать можно только динамические окна (Dynamic = true).",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'uid': { 'type': 'string', 'description': 'UID окна (вкладки) из списка, возвращаемого project_get_active_windows.' }
+              },
+              'required': ['uid'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = false,
+            DestructiveHint = true,
+            IdempotentHint = false
+        )]
+        public object CloseWindow(Dictionary<string, object> args)
+        {
+            var uid = JsonUtils.RequireString(args, "uid");
+
+            if (string.IsNullOrWhiteSpace(uid))
+                throw new BadRequestException("UID окна (вкладки) не может быть пустым.");
+
+            var projectManager = ProjectManager.Instance;
+
+            var closedWindow = projectManager.CloseWindow(uid) ??
+                throw new BadRequestException($"Активная модель не содержит окно (вкладку) с переданным UID: {uid}.");
+
+            return new
+            {
+                result = CreateWindowObj(closedWindow),
+                description = "Закрытое окно (вкладка).",
+                status = "Окно (вкладка) успешно закрыто."
+            };
+        }
+
+        [ToolDef(
+            Name = "activate_window",
+            Domain = ToolDomains.Project,
+            Description = "Активирует окно (вкладку) активной модели по UID.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'uid': { 'type': 'string', 'description': 'UID окна (вкладки) из списка, возвращаемого project_get_active_windows.' }
+              },
+              'required': ['uid'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object ActivateWindow(Dictionary<string, object> args)
+        {
+            var uid = JsonUtils.RequireString(args, "uid");
+
+            if (string.IsNullOrWhiteSpace(uid))
+                throw new BadRequestException("UID окна (вкладки) не может быть пустым.");
+
+            var projectManager = ProjectManager.Instance;
+
+            var activatedWindow = projectManager.ActivateWindow(uid) ??
+                throw new BadRequestException($"Активная модель не содержит окно (вкладку) с переданным UID: {uid}.");
+
+            return new
+            {
+                result = CreateWindowObj(activatedWindow),
+                description = "Активированное окно (вкладка).",
+                status = "Окно (вкладка) успешно активировано."
+            };
+        }
+
+        public static object CreateWindowObj(WindowInfo windowInfo)
+        {
+            return new
+            {
+                windowInfo.Name,
+                windowInfo.UID,
+                windowInfo.Dynamic,
+                windowInfo.HasCadView
+            };
+        }
     }
 }

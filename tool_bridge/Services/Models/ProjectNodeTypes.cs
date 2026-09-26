@@ -2,6 +2,7 @@
 {
     internal static class ProjectNodeTypes
     {
+        public const string PROJECT = "rbproj";
         public const string FOLDER = "folder";
         public const string DTM = "dtm";
         public const string ROAD = "road";

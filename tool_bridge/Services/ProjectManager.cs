@@ -268,5 +268,91 @@ namespace Topomatic.ToolBridge.Services
                 project.EndUpdate();
             }
         }
+
+        public ProjectNode ActivateModel(URI nodeUri)
+        {
+            var node = GetNode(nodeUri);
+
+            if (node != null)
+            {
+                var availableModels = ApplicationHost.Current.GetAvailableModelTypes().Except(new[] { ProjectNodeTypes.PROJECT });
+
+                if (!availableModels.Any(modelType => string.Equals(modelType, node.Type)))
+                    throw new BadRequestException($"Неподдерживаемый тип модели {node.Type ?? "none"}.");
+
+                if (!(bool)ApplicationHost.Current.Plugins.Execute("activate", new object[] { node.Model }))
+                    ApplicationHost.Current.Plugins.Execute("open", new object[] { node.Model });
+
+                if (!(bool)ApplicationHost.Current.Plugins.Execute("opened", new object[] { node.Model }))
+                    throw new ToolExecutionFailedException($"Не удалось активировать элемент проекта {node.Name}.");
+            }
+
+            return node;
+        }
+
+        public List<WindowInfo> GetActiveWindows()
+        {
+            var activeWindows = new List<WindowInfo>();
+
+            foreach (var window in ApplicationHost.Current.ActiveProject.GetWindows())
+            {
+                var hasCadView = false;
+
+                if (window is IFramableDocumentWindow framable)
+                    hasCadView = framable.CadView != null;
+
+                activeWindows.Add(
+                    new WindowInfo()
+                    {
+                        Name = window.Text,
+                        UID = window.UID,
+                        Dynamic = window.CloseButton,
+                        Window = window,
+                        HasCadView = hasCadView
+                    }
+                );
+            }
+
+            return activeWindows;
+        }
+
+        public WindowInfo CloseWindow(string uid)
+        {
+            var activeWindows = GetActiveWindows();
+
+            foreach (var windowInfo in activeWindows)
+            {
+                if (string.Equals(windowInfo.UID, uid))
+                {
+                    if (!windowInfo.Dynamic)
+                    {
+                        throw new BadRequestException(
+                            $"Окно {windowInfo.Name} с UID: {windowInfo.UID} не является динамическим. " +
+                            "Закрывать можно только динамические окна."
+                        );
+                    }
+                    windowInfo.Window.Close();
+                    return windowInfo;
+                }
+            }
+
+            return null;
+        }
+
+        public WindowInfo ActivateWindow(string uid)
+        {
+            var activeWindows = GetActiveWindows();
+
+            foreach (var windowInfo in activeWindows)
+            {
+                if (string.Equals(windowInfo.UID, uid))
+                {
+                    windowInfo.Window.Activate();
+                    return windowInfo;
+                }
+            }
+
+            return null;
+        }
     }
 }

@@ -176,6 +176,7 @@
     <Compile Include="Exceptions\ToolExecutionFailedException.cs" />
     <Compile Include="Exceptions\ToolNotFoundException.cs" />
     <Compile Include="Services\Models\ProjectNodeTypes.cs" />
+    <Compile Include="Services\Models\WindowInfo.cs" />
     <Compile Include="Settings\McpSettings.cs" />
     <Compile Include="Settings\ToolApprovalScope.cs" />
     <Compile Include="Settings\ToolConfig.cs" />
