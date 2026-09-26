@@ -183,6 +183,7 @@
     <Compile Include="ToolCollector.cs" />
     <Compile Include="Utils\ConsoleReader.cs" />
     <Compile Include="Utils\DwgUtils.cs" />
+    <Compile Include="Utils\GeometryUtils.cs" />
     <Compile Include="ErrorCodes.cs" />
     <Compile Include="Utils\JsonUtils.cs" />
     <Compile Include="Services\Models\ProjectNode.cs" />

@@ -346,11 +346,41 @@ namespace Topomatic.ToolBridge.Tools
         [ToolDef(
             Name = "tlc_script_execute",
             Domain = ToolDomains.Tlc,
-            Description = "Выполняет Tlc-скрипт для проверки ошибок построения модели.",
+            Description = "Выполняет Tlc-скрипт для проверки ошибок построения модели. Если задана sectionPlane, дополнительно возвращает контуры сечения в локальных координатах модели.",
             InputSchema = @"{
               'type': 'object',
               'properties': {
                 'scriptPath': { 'type': 'string', 'description': 'Полный путь к файлу Tlc-скрипта, который нужно выполнить и проверить.' },
+                'sectionPlane': {
+                  'type': 'object',
+                  'description': 'Необязательная плоскость сечения в локальных координатах Tlc-модели. Если задана, дополнительно возвращаются контуры сечения.',
+                  'properties': {
+                    'position': {
+                      'type': 'object',
+                      'description': 'Точка на плоскости сечения в локальных координатах модели.',
+                      'properties': {
+                        'x': { 'type': 'number' },
+                        'y': { 'type': 'number' },
+                        'z': { 'type': 'number' }
+                      },
+                      'required': ['x', 'y', 'z'],
+                      'additionalProperties': false
+                    },
+                    'normal': {
+                      'type': 'object',
+                      'description': 'Ненулевая нормаль плоскости сечения в локальных координатах модели.',
+                      'properties': {
+                        'x': { 'type': 'number' },
+                        'y': { 'type': 'number' },
+                        'z': { 'type': 'number' }
+                      },
+                      'required': ['x', 'y', 'z'],
+                      'additionalProperties': false
+                    }
+                  },
+                  'required': ['position', 'normal'],
+                  'additionalProperties': false
+                },
                 'parameters': {
                   'type': 'object',
                   'description': 'Значения параметров Tlc-модели. Можно передать только изменяемые параметры из схемы, возвращаемой tlc_get_parameter_schema.',
@@ -369,6 +399,27 @@ namespace Topomatic.ToolBridge.Tools
         {
             var scriptPath = JsonUtils.RequireString(args, "scriptPath");
             var includeConsoleOutput = JsonUtils.GetBool(args, "includeConsoleOutput", false).Value;
+            var sectionPlaneObject = JsonUtils.GetObject(args, "sectionPlane", null);
+            Plane? sectionPlane = null;
+            if (sectionPlaneObject != null)
+            {
+                var position = JsonUtils.RequireVector3D(sectionPlaneObject, "position");
+                var normal = JsonUtils.RequireVector3D(sectionPlaneObject, "normal");
+                var normalLength = normal.Length;
+
+                if (double.IsNaN(normalLength) || double.IsInfinity(normalLength) || normalLength <= 1e-9)
+                    throw new BadRequestException("Нормаль плоскости сечения должна быть конечной и ненулевой.");
+
+                if (double.IsNaN(position.X) || double.IsInfinity(position.X) ||
+                    double.IsNaN(position.Y) || double.IsInfinity(position.Y) ||
+                    double.IsNaN(position.Z) || double.IsInfinity(position.Z))
+                {
+                    throw new BadRequestException("Координаты точки плоскости сечения должны быть конечными.");
+                }
+
+                normal.Normalize();
+                sectionPlane = new Plane(normal, position);
+            }
             var tlcModel = LoadTlcModel(scriptPath);
             var meshBounds = BoundingBox3D.Empty;
             try
@@ -389,16 +440,35 @@ namespace Topomatic.ToolBridge.Tools
 
                 var consoleOutput = string.IsNullOrWhiteSpace(secondOutput) ? firstOutput : secondOutput;
                 var geometryModel = tlcModel.GetModel();
+
                 if (geometryModel != null)
                     meshBounds = geometryModel.GetBounds();
+
                 var result = new Dictionary<string, object>
                 {
                     ["name"] = tlcModel.Name,
                     ["properties"] = SmdxUtils.CreatePropsArray(tlcModel.GetAllProperties()),
                     ["meshBounds"] = DwgUtils.CreateBounds3DObj(meshBounds)
                 };
+
+                if (sectionPlane.HasValue)
+                {
+                    var contours = geometryModel == null
+                        ? new object[0]
+                        : geometryModel.CreateSection(sectionPlane.Value)
+                            .Select(GeometryUtils.CreateSectionContourObj)
+                            .ToArray();
+
+                    result["section"] = new
+                    {
+                        contourCount = contours.Length,
+                        contours
+                    };
+                }
+
                 if (includeConsoleOutput)
                     result["consoleOutput"] = consoleOutput;
+
                 return new
                 {
                     result,
@@ -518,6 +588,141 @@ namespace Topomatic.ToolBridge.Tools
                 },
                 description = "Схема параметров Tlc-модели.",
                 status = "Схема параметров успешно получена."
+            };
+        }
+
+        [ToolDef(
+            Name = "tlc_model_create_section",
+            Domain = ToolDomains.Tlc,
+            Description = "Возвращает контуры сечения Tlc-модели плоскостью в координатах чертежа или в локальных координатах Tlc-модели. Плоскость всегда задается в координатах чертежа. Замкнутые контуры повторяют первую вершину в конце. Открытые сетки могут давать открытые контуры. Точки касания не возвращаются.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'guid': { 'type': 'string', 'description': 'Guid-идентификатор Tlc-модели (из активного чертежа).' },
+                'position': {
+                  'type': 'object',
+                  'description': 'Точка на плоскости сечения в координатах чертежа.',
+                  'properties': {
+                    'x': { 'type': 'number', 'description': 'x-координата' },
+                    'y': { 'type': 'number', 'description': 'y-координата' },
+                    'z': { 'type': 'number', 'description': 'z-координата' }
+                  },
+                  'required': ['x', 'y', 'z'],
+                  'additionalProperties': false
+                },
+                'normal': {
+                  'type': 'object',
+                  'description': 'Ненулевая нормаль плоскости сечения в координатах чертежа.',
+                  'properties': {
+                    'x': { 'type': 'number', 'description': 'x-компонента нормали' },
+                    'y': { 'type': 'number', 'description': 'y-компонента нормали' },
+                    'z': { 'type': 'number', 'description': 'z-компонента нормали' }
+                  },
+                  'required': ['x', 'y', 'z'],
+                  'additionalProperties': false
+                },
+                'coordinateSystem': {
+                  'type': 'string',
+                  'description': 'Система координат возвращаемых вершин: Drawing - координаты чертежа; Local - координаты Tlc-модели до применения положения, поворота и масштаба вставки. На систему координат плоскости не влияет. По умолчанию Drawing.',
+                  'enum': ['Drawing', 'Local'],
+                  'default': 'Drawing'
+                }
+              },
+              'required': ['guid', 'position', 'normal'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object CreateTlcModelSection(Dictionary<string, object> args)
+        {
+            var drawing = DwgUtils.RequireDrawing(CadView);
+            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var guidStr = JsonUtils.RequireString(args, "guid");
+            var position = JsonUtils.RequireVector3D(args, "position");
+            var normal = JsonUtils.RequireVector3D(args, "normal");
+            var coordinateSystem = JsonUtils.GetString(args, "coordinateSystem", "Drawing");
+
+            var localCoordinates = string.Equals(coordinateSystem, "Local", StringComparison.OrdinalIgnoreCase);
+            if (!localCoordinates && !string.Equals(coordinateSystem, "Drawing", StringComparison.OrdinalIgnoreCase))
+                throw new BadRequestException("Неизвестное значение coordinateSystem. Допустимые значения: Drawing, Local.");
+
+            coordinateSystem = localCoordinates ? "Local" : "Drawing";
+            var normalLength = normal.Length;
+
+            if (double.IsNaN(normalLength) || double.IsInfinity(normalLength) || normalLength <= 1e-9)
+                throw new BadRequestException("Нормаль плоскости сечения должна быть конечной и ненулевой.");
+
+            if (double.IsNaN(position.X) || double.IsInfinity(position.X) ||
+                double.IsNaN(position.Y) || double.IsInfinity(position.Y) ||
+                double.IsNaN(position.Z) || double.IsInfinity(position.Z))
+            {
+                throw new BadRequestException("Координаты точки плоскости сечения должны быть конечными.");
+            }
+
+            normal.Normalize();
+            var plane = new Plane(normal, position);
+            var guid = DwgUtils.ParseGuid(guidStr);
+            var (tlcEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
+            var tlcModel = DwgUtils.RequireTlcElement(tlcEntity, guidStr);
+            var geometryModel = tlcModel.GetModel() ??
+                throw new PreconditionFailedException($"У Tlc-модели с guid \"{guidStr}\" отсутствует геометрия.");
+
+            // Применяем вставку к копии, чтобы не менять геометрию Tlc-модели.
+            var sectionModel = geometryModel.Clone();
+            var matrix = tlcEntity.Matrix;
+            var resultMatrix = Matrix.Identity;
+
+            if (localCoordinates)
+            {
+                var determinant = matrix.Determinant();
+
+                if (double.IsNaN(determinant) || double.IsInfinity(determinant) || determinant == 0)
+                    throw new PreconditionFailedException("Невозможно получить локальные координаты: матрица вставки Tlc-модели необратима.");
+
+                resultMatrix = Matrix.Invert(matrix);
+            }
+
+            // Clone не сохраняет текущие Matrix сеток, берем их из оригинала.
+            foreach (var mesh in sectionModel.Meshes)
+            {
+                mesh.Value.Matrix = geometryModel.Meshes[mesh.Key].Matrix * matrix;
+            }
+
+            var sectionContours = sectionModel.CreateSection(plane);
+
+            if (localCoordinates)
+            {
+                // Убираем только преобразование вставки; матрицы сеток остаются учтены.
+                foreach (var contour in sectionContours)
+                {
+                    var points = contour.ContourPoints;
+                    for (int i = 0; i < points.Count; i++)
+                    {
+                        points[i] = Vector3D.Transform(points[i], resultMatrix);
+                    }
+                }
+            }
+
+            var contours = sectionContours
+                .Select(GeometryUtils.CreateSectionContourObj)
+                .ToArray();
+
+            return new
+            {
+                result = new
+                {
+                    guid = guidStr,
+                    name = currentName ?? tlcModel.Name ?? "none",
+                    coordinateSystem,
+                    contourCount = contours.Length,
+                    contours
+                },
+                description = localCoordinates
+                    ? "Контуры сечения Tlc-модели плоскостью в локальных координатах Tlc-модели."
+                    : "Контуры сечения Tlc-модели плоскостью в координатах чертежа.",
+                status = $"Контуры сечения успешно получены. Количество контуров: {contours.Length}."
             };
         }
 
