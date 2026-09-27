@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -17,7 +17,9 @@ namespace Topomatic.ToolBridge.Services
             get
             {
                 if (m_Instance == null)
+#pragma warning disable CS0618 // Type or member is obsolete
                     m_Instance = new ObjectStorage();
+#pragma warning restore CS0618 // Type or member is obsolete
                 return m_Instance;
             }
         }
@@ -27,7 +29,9 @@ namespace Topomatic.ToolBridge.Services
         private ConditionalWeakTable<object, GuidBox> m_Guids;
         private int m_OperationsSinceLastPrune;
 
-        private ObjectStorage()
+        //Публичный конструктор сохранен для поддержки совместимости со сторонними плагинами.
+        [Obsolete("Для получения экземпляра хранилища объектов используйте статическое свойство Instance.")]
+        public ObjectStorage()
         {
             m_SyncRoot = new object();
             m_Objects = new Dictionary<Guid, WeakReference<object>>();

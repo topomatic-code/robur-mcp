@@ -25,7 +25,7 @@ namespace Topomatic.ToolBridge.Settings
         public static void Load()
         {
             var settingsPath = ProcessEnvironment.Current.ExpandEnvironmentVariables(SETTINGS_PATH);
-            m_ToolConfigs.Clear();
+            var savedConfigs = new List<ToolConfig>();
             if (File.Exists(settingsPath))
             {
                 var stgDocument = new StgDocument();
@@ -38,37 +38,12 @@ namespace Topomatic.ToolBridge.Settings
                 for (int i = 0; i < toolConfigsArr.Count; i++)
                 {
                     var toolConfig = ToolConfig.LoadFromStg(toolConfigsArr.GetNode(i));
-                    m_ToolConfigs.Add(toolConfig);
+                    savedConfigs.Add(toolConfig);
                 }
             }
-            var tools = ToolCollector.Tools;
-            var unsavedTools = tools.Where(t => !m_ToolConfigs.Any(cfg => cfg.Name.Equals(t.Definition.Name)));
-            foreach (var tool in unsavedTools)
-            {
-                var definition = tool.Definition;
-                var annotations = definition.Annotations;
-                m_ToolConfigs.Add(
-                    new ToolConfig(
-                        definition.Name,
-                        definition.Domain,
-                        definition.Description,
-                        definition.InputSchema.ToString(),
-                        annotations.ReadOnlyHint,
-                        annotations.DestructiveHint,
-                        annotations.IdempotentHint)
-                    {
-                        Enabled = definition.DefaultEnabled,
-                        ApprovalScope = ToolApprovalScope.None
-                    }
-                );
-            }
-            m_ToolConfigs.Sort((a, b) =>
-            {
-                var domainCmp = a.Domain.CompareTo(b.Domain);
-                if (domainCmp == 0)
-                    return a.Name.CompareTo(b.Name);
-                return domainCmp;
-            });
+            var configs = ToolConfigFactory.Create(ToolCollector.Tools, savedConfigs);
+            m_ToolConfigs.Clear();
+            m_ToolConfigs.AddRange(configs);
         }
 
         public static void Save()

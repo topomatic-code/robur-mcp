@@ -1,6 +1,8 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Plugins;
 
 namespace ToolBridge.Tests
@@ -20,16 +22,7 @@ namespace ToolBridge.Tests
                 {
                     try
                     {
-                        var providers = typeof(TestModule).Assembly.GetTypes()
-                            .Where(t => t.IsClass && t.IsDefined(typeof(TestProviderAttribute), false))
-                            .OrderBy(t => t.FullName, StringComparer.Ordinal).ToArray();
-                        if (providers.Length == 0)
-                            console.Write(ConsoleColor.Yellow, "! Классы с атрибутом TestProvider не найдены.");
-                        foreach (var provider in providers)
-                        {
-                            console.Write(ConsoleColor.Gray, "=== " + provider.FullName + " ===");
-                            console.WriteResults(TestRunner.RunProvider(provider));
-                        }
+                        RunProviders(console);
                     }
                     catch (Exception ex)
                     {
@@ -42,6 +35,31 @@ namespace ToolBridge.Tests
                 Interlocked.Exchange(ref m_Running, 0);
             }
         }
+
+        private static void RunProviders(TestConsole console)
+        {
+            var providers = new List<object>();
+            ApplicationHost.Current.Plugins.Broadcast("test_request", new string[0], new object[] { providers });
+            if (providers.Count == 0)
+                console.Write(ConsoleColor.Yellow, "! Тестовые провайдеры не найдены.");
+            var registeredTypes = new HashSet<Type>();
+            foreach (var provider in providers.OrderBy(p => p?.GetType().FullName, StringComparer.Ordinal))
+            {
+                try
+                {
+                    if (provider == null)
+                        throw new InvalidOperationException("Зарегистрирован пустой тестовый провайдер.");
+                    var type = provider.GetType();
+                    if (!registeredTypes.Add(type))
+                        throw new InvalidOperationException("Повторная регистрация тестового провайдера: " + type.FullName);
+                    console.Write(ConsoleColor.Gray, "=== " + type.FullName + " ===");
+                    console.WriteResults(TestRunner.RunProvider(provider));
+                }
+                catch (Exception ex)
+                {
+                    console.Write(ConsoleColor.Red, "✗ Ошибка тестового провайдера: " + ex);
+                }
+            }
+        }
     }
 }
-

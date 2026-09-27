@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
@@ -16,10 +16,7 @@ namespace ToolBridge.Tests
         private readonly NamedPipeServerStream m_Pipe;
         private readonly BlockingCollection<string> m_Messages = new BlockingCollection<string>();
         private readonly object m_SyncRoot = new object();
-        private readonly Task m_OutputTask;
         private bool m_Closed;
-
-        internal Task Completion => m_OutputTask;
 
         public TestConsole()
         {
@@ -58,7 +55,7 @@ Write-Host 'Нажмите Enter, чтобы закрыть окно.'
                     WindowStyle = ProcessWindowStyle.Normal
                 };
                 using (var process = Process.Start(start)) { }
-                m_OutputTask = Task.Run(() => ProcessOutput(TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(5)));
+                _ = Task.Run(() => ProcessOutput(TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(5)));
                 Write(ConsoleColor.Gray, "Запуск тестов Tool Bridge...");
             }
             catch
@@ -69,38 +66,28 @@ Write-Host 'Нажмите Enter, чтобы закрыть окно.'
             }
         }
 
-        // Allows checking the transport with a local pipe without opening a window.
-        internal TestConsole(NamedPipeServerStream pipe, TimeSpan connectionTimeout, TimeSpan writeTimeout)
-        {
-            m_Pipe = pipe ?? throw new ArgumentNullException(nameof(pipe));
-            m_OutputTask = Task.Run(() => ProcessOutput(connectionTimeout, writeTimeout));
-        }
-
-        public void WriteResults(TestingContext.Results results) => WriteResults(results, Write);
-
-        // The output delegate allows verifying formatting without opening a window.
-        internal static void WriteResults(TestingContext.Results results, Action<ConsoleColor, string> output)
+        public void WriteResults(TestingContext.Results results)
         {
             foreach (var message in results.Messages)
             {
                 switch (message.Kind)
                 {
                     case TestingContext.MessageKind.Success:
-                        output(ConsoleColor.Green, "✓ " + message.Text);
+                        Write(ConsoleColor.Green, "✓ " + message.Text);
                         break;
                     case TestingContext.MessageKind.Failure:
-                        output(ConsoleColor.Red, "✗ " + message.Text);
+                        Write(ConsoleColor.Red, "✗ " + message.Text);
                         break;
                     case TestingContext.MessageKind.Warning:
-                        output(ConsoleColor.Yellow, "! " + message.Text);
+                        Write(ConsoleColor.Yellow, "! " + message.Text);
                         break;
                 }
             }
-            output(ConsoleColor.Green, $"✓ Пройдено: {results.Passed}");
-            output(ConsoleColor.Red, $"✗ Не пройдено: {results.Failed}");
+            Write(ConsoleColor.Green, $"✓ Пройдено: {results.Passed}");
+            Write(ConsoleColor.Red, $"✗ Не пройдено: {results.Failed}");
             if (results.Skipped != 0)
-                output(ConsoleColor.Yellow, $"! Не выполнено: {results.Skipped}");
-            output(ConsoleColor.Gray, string.Empty);
+                Write(ConsoleColor.Yellow, $"! Не выполнено: {results.Skipped}");
+            Write(ConsoleColor.Gray, string.Empty);
         }
 
         public void Write(ConsoleColor color, string text)

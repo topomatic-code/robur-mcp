@@ -16,7 +16,6 @@ using Topomatic.Dwg.Layer;
 using Topomatic.FoundationClasses;
 using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services.Models;
-using Topomatic.ToolBridge.Utils;
 
 namespace Topomatic.ToolBridge.Services
 {

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Topomatic.Cad.Foundation;
 using Topomatic.ToolBridge.Exceptions;
-using Topomatic.ToolBridge.Utils;
 using Topomatic.Visualization;
 using Topomatic.Visualization.Runtime;
 

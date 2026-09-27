@@ -4,7 +4,6 @@ using Topomatic.Cad.Foundation;
 using Topomatic.Cad.View;
 using Topomatic.Cad.View.Hints;
 using Topomatic.ToolBridge.Exceptions;
-using Topomatic.ToolBridge.Utils;
 
 namespace Topomatic.ToolBridge.Tools
 {

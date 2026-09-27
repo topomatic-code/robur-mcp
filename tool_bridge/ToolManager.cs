@@ -5,7 +5,6 @@ using Topomatic.ApplicationPlatform;
 using Topomatic.Cad.View;
 using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services;
-using Topomatic.ToolBridge.Utils;
 
 namespace Topomatic.ToolBridge
 {
@@ -28,8 +27,13 @@ namespace Topomatic.ToolBridge
 
         public void Initialize()
         {
+            Initialize(ToolCollector.Tools);
+        }
+
+        internal void Initialize(IEnumerable<Tool> tools)
+        {
             m_Tools.Clear();
-            m_Tools.AddRange(ToolCollector.Tools);
+            m_Tools.AddRange(tools);
         }
 
         public IList<ToolDefinition> GetTools() => m_Tools.Select(t => t.Definition).ToList();

@@ -191,6 +191,7 @@
     <Compile Include="Settings\ToolApprovalScope.cs" />
     <Compile Include="Settings\ToolConfig.cs" />
     <Compile Include="Settings\ToolSettings.cs" />
+    <Compile Include="Settings\ToolConfigFactory.cs" />
     <Compile Include="ToolCollector.cs" />
     <Compile Include="Utils\ConsoleReader.cs" />
     <Compile Include="Utils\DwgUtils.cs" />

@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using Topomatic.ApplicationPlatform.Plugins;
 
-namespace ToolBridge_v0_1_0_ApiChecker
+namespace ToolBridge.Tests.ApiCheck_v0_1_0
 {
     internal sealed class PluginHost : PluginHostInitializator
     {

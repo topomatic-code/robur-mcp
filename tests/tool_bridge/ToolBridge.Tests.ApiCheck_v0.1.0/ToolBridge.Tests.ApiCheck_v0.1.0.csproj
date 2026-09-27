@@ -7,8 +7,8 @@
     <ProjectGuid>{2DC42E90-CB22-474A-926E-6635505072D9}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ToolBridge_v0_1_0_ApiChecker</RootNamespace>
-    <AssemblyName>ToolBridge_v0.1.0_ApiChecker</AssemblyName>
+    <RootNamespace>ToolBridge.Tests.ApiCheck_v0_1_0</RootNamespace>
+    <AssemblyName>ToolBridge.Tests.ApiCheck_v0.1.0</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
@@ -17,7 +17,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\..\..\Out\Bin\</OutputPath>
+    <OutputPath>..\..\..\Out\Bin\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -25,7 +25,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\..\..\Out\Bin\</OutputPath>
+    <OutputPath>..\..\..\Out\Bin\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -40,12 +40,6 @@
       <SpecificVersion>True</SpecificVersion>
       <Private>False</Private>
     </Reference>
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Xml" />
     <Reference Include="Topomatic.ApplicationPlatform">
       <HintPath>references\Topomatic.ApplicationPlatform.dll</HintPath>
       <Private>False</Private>
@@ -98,21 +92,31 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Module.cs" />
-    <Compile Include="ApiChecks.cs" />
-    <Compile Include="ApiChecks.Json.cs" />
-    <Compile Include="ApiChecks.Dwg.cs" />
-    <Compile Include="ApiChecks.Integration.cs" />
-    <Compile Include="LegacyProviderProbe.cs" />
     <Compile Include="PluginHost.cs" />
+    <Compile Include="ApiContract.cs" />
+    <Compile Include="ApiChecks.ToolProvider.cs" />
+    <Compile Include="ApiChecks.ToolDefAttribute.cs" />
+    <Compile Include="ProviderIntegrationChecks.cs" />
+    <Compile Include="LegacyToolProvider.cs" />
+    <Compile Include="IntegrationHost.cs" />
+    <Compile Include="ApiChecks.ObjectStorage.cs" />
+    <Compile Include="ApiChecks.ToolBridgeLogger.cs" />
+    <Compile Include="ApiChecks.JsonUtils.cs" />
+    <Compile Include="ApiChecks.DwgUtils.cs" />
+    <Compile Include="ApiChecks.SmdxUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="README.md" />
-    <None Include="VerifyApiCoverage.ps1" />
-    <None Include="Verification\ApiSignatureProvider.cs" />
-    <None Include="tool_bridge_v0.1.0_api_checker.plugin">
+    <None Include="tool_bridge_tests_api_check_v0.1.0.plugin">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ToolBridge.Tests\ToolBridge.Tests.csproj">
+      <Project>{B2FFF172-E37D-47B9-A24D-81FCFBD1FDA2}</Project>
+      <Name>ToolBridge.Tests</Name>
+      <Private>False</Private>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -4,7 +4,8 @@ using System.Reflection;
 using Topomatic.Cad.Foundation;
 using Topomatic.Visualization;
 
-namespace Topomatic.ToolBridge.Utils
+//Пространство имен сохранено для поддержки совместимости со сторонними плагинами.
+namespace Topomatic.ToolBridge
 {
     [Obfuscation(Exclude = true, ApplyToMembers = true)]
     public static class SmdxUtils

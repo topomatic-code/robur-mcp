@@ -1,0 +1,11 @@
+{
+  "assemblies": {
+    "tool_bridge_tests_api_check_v0.1.0": {
+      "assembly": "ToolBridge.Tests.ApiCheck_v0.1.0.dll, ToolBridge.Tests.ApiCheck_v0_1_0.PluginHost"
+    }
+  },
+  "broadcasts": {
+    "test_request": "tool_bridge_tests_api_check_v0.1.0_register",
+    "tool_request": "tool_bridge_tests_api_check_v0.1.0_tools"
+  }
+}

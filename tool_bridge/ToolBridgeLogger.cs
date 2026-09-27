@@ -59,6 +59,9 @@ namespace Topomatic.ToolBridge
 
         public string CreateLogString(string message) => $"[{DateTime.Now:HH:mm:ss}] [Robur tool bridge]: {message}";
 
+        [Obsolete("Метод устарел. Реализация будет убрана. Рекомендуется заменить вызовы Log(...) на вызов PublicInfo(...).")]
+        public void Log(string message) => PublicInfo(message);
+
         public void PublicInfo(string message) => WritePublic(LogLevel.Info, message);
         public void PublicWarning(string message) => WritePublic(LogLevel.Warning, message);
         public void PublicError(string message) => WritePublic(LogLevel.Error, message);

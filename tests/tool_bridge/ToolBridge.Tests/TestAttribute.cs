@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 
 namespace ToolBridge.Tests
 {
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    internal sealed class TestAttribute : Attribute
+    public sealed class TestAttribute : Attribute
     {
 
     }

@@ -8,7 +8,6 @@ using Topomatic.FoundationClasses;
 using Topomatic.Tables.Sheets;
 using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services;
-using Topomatic.ToolBridge.Utils;
 
 namespace Topomatic.ToolBridge.Tools
 {

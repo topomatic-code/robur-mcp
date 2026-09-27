@@ -15,7 +15,8 @@ using Topomatic.Visualization;
 using Topomatic.Visualization.Constructions;
 using Topomatic.Visualization.Runtime;
 
-namespace Topomatic.ToolBridge.Utils
+//Пространство имен сохранено для поддержки совместимости со сторонними плагинами.
+namespace Topomatic.ToolBridge
 {
     [Obfuscation(Exclude = true, ApplyToMembers = true)]
     public static class DwgUtils
@@ -560,11 +561,9 @@ namespace Topomatic.ToolBridge.Utils
             };
         }
 
-        public static object CreateTlcObj(
-            DwgModel3DElement tlcEntity,
-            string guid,
-            string name,
-            string consoleOutput = null)
+        public static object CreateTlcObj(DwgModel3DElement tlcEntity, string guid, string name) => CreateTlcObj(tlcEntity, guid, name, null);
+
+        public static object CreateTlcObj(DwgModel3DElement tlcEntity, string guid, string name, string consoleOutput)
         {
             var tlcModel = tlcEntity.Element as ConstructedModel3dElement ??
                 throw new ArgumentException("Element is not tlc model", nameof(tlcEntity));
