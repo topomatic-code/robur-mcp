@@ -217,7 +217,7 @@ namespace Topomatic.ToolBridge
         }
 
         [cmd("generate_tools")]
-        private void CulvertSettings(object[] args)
+        private void GenerateTools(object[] args)
         {
             var toolProviders = args[0] as List<ToolProvider>;
             toolProviders.AddRange(
