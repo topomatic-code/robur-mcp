@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\tool_bridge\Signature.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,58 +37,16 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed">
-      <HintPath>references\Newtonsoft.Json.dll</HintPath>
-      <SpecificVersion>True</SpecificVersion>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="Topomatic.ApplicationPlatform">
-      <HintPath>references\Topomatic.ApplicationPlatform.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.ToolBridge, Version=0.1.0.0, Culture=neutral, PublicKeyToken=0af0f61cef2ab3a8">
-      <HintPath>references\Topomatic.ToolBridge.dll</HintPath>
-      <SpecificVersion>True</SpecificVersion>
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.ApplicationPlatform.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Cad.Foundation">
-      <HintPath>references\Topomatic.Cad.Foundation.dll</HintPath>
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Cad.Foundation.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Cad.View">
-      <HintPath>references\Topomatic.Cad.View.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.Dwg">
-      <HintPath>references\Topomatic.Dwg.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.Landscaping">
-      <HintPath>references\Topomatic.Landscaping.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.Visualization">
-      <HintPath>references\Topomatic.Visualization.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.Visualization.Runtime">
-      <HintPath>references\Topomatic.Visualization.Runtime.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.Stg">
-      <HintPath>references\Topomatic.Stg.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.FoundationClasses">
-      <HintPath>references\Topomatic.FoundationClasses.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.Tables">
-      <HintPath>references\Topomatic.Tables.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="Topomatic.Tables.Export">
-      <HintPath>references\Topomatic.Tables.Export.dll</HintPath>
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Cad.View.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -97,7 +57,7 @@
     <Compile Include="ApiChecks.ToolProvider.cs" />
     <Compile Include="ApiChecks.ToolDefAttribute.cs" />
     <Compile Include="ProviderIntegrationChecks.cs" />
-    <Compile Include="LegacyToolProvider.cs" />
+    <Compile Include="ProbeToolProvider.cs" />
     <Compile Include="IntegrationHost.cs" />
     <Compile Include="ApiChecks.ObjectStorage.cs" />
     <Compile Include="ApiChecks.ToolBridgeLogger.cs" />
@@ -112,6 +72,12 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\tool_bridge\Topomatic.ToolBridge.csproj">
+      <Project>{DF5BFC1E-AE90-4289-A93D-976612F4057E}</Project>
+      <Name>Topomatic.ToolBridge</Name>
+      <Private>False</Private>
+      <AdditionalProperties>OutputPath=$(MSBuildProjectDirectory)\..\..\..\Out\Bin\</AdditionalProperties>
+    </ProjectReference>
     <ProjectReference Include="..\ToolBridge.Tests\ToolBridge.Tests.csproj">
       <Project>{B2FFF172-E37D-47B9-A24D-81FCFBD1FDA2}</Project>
       <Name>ToolBridge.Tests</Name>

@@ -5,6 +5,8 @@ using Topomatic.Cad.Foundation;
 using Topomatic.Dwg;
 using Topomatic.Dwg.Entities;
 using Topomatic.ToolBridge.Exceptions;
+using Topomatic.ToolBridge.Infrastructure;
+using Topomatic.ToolBridge.Services;
 
 namespace Topomatic.ToolBridge.Tools
 {
@@ -34,8 +36,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateBlock(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var entities = JsonUtils.RequireStringArray(args, "entities");
             if (string.IsNullOrWhiteSpace(name))
@@ -53,11 +56,8 @@ namespace Topomatic.ToolBridge.Tools
                     throw new PreconditionFailedException($"Не удалось найти элемент по указанному guid \"{entityGuidStr}\".");
                 sourceEntities.Add(entity);
             }
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание блока чертежа \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание блока чертежа \"{name}\""));
             try
             {
                 var block = drawing.Blocks.Add(name) ?? throw new ToolExecutionFailedException("Не удалось создать блок.");
@@ -120,8 +120,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object InsertBlock(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var blockName = JsonUtils.RequireString(args, "blockName");
             var position = JsonUtils.RequireObject(args, "position");
@@ -151,11 +152,8 @@ namespace Topomatic.ToolBridge.Tools
             }
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Вставка блока \"{blockName}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Вставка блока \"{blockName}\""));
             try
             {
                 var insert = new DwgInsert
@@ -205,8 +203,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object ExplodeBlock(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var (insert, currentName) = DwgUtils.FindEntity<DwgInsert>(drawing, sessionStorage, guid);
@@ -214,11 +213,8 @@ namespace Topomatic.ToolBridge.Tools
                 throw new PreconditionFailedException($"Не удалось найти вставку блока по указанному guid \"{guidStr}\".");
             var block = insert.Block ?? throw new PreconditionFailedException($"Вставка блока с guid \"{guidStr}\" не ссылается на блок.");
             var removedInsertInfo = DwgUtils.CreateEntityInfoObj(insert, guidStr, currentName ?? "none");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Взрыв вставки блока \"{block.Name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Взрыв вставки блока \"{block.Name}\""));
             try
             {
                 var copiedEntities = new List<DwgEntity>();
@@ -293,7 +289,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveBlock(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
                 throw new BadRequestException("Имя блока не может быть пустым.");
@@ -301,11 +298,8 @@ namespace Topomatic.ToolBridge.Tools
                 throw new PreconditionFailedException($"Блок с именем {name} не содержится в таблице блоков чертежа.");
             var block = drawing.Blocks[name] ?? throw new InvalidOperationException($"Не удалось получить блок с именем {name}.");
             var result = CreateBlockObj(block);
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Удаление блока чертежа \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Удаление блока чертежа \"{name}\""));
             try
             {
                 if (!drawing.Blocks.Remove(name))
@@ -338,7 +332,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetBlocks(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var blocks = drawing.Blocks.Select(CreateBlockObj).ToArray();
             return new
             {

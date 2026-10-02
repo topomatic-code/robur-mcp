@@ -11,19 +11,25 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         private const BindingFlags Members = BindingFlags.Public | BindingFlags.NonPublic |
             BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy;
 
-        internal static void Verify(Type type, string name, string baseType, TypeAttributes baseline,
+        internal static void Verify(string name, string baseType, TypeAttributes baseline,
             string[] expectedMethods, string[] expectedProperties)
         {
-            Check(type.FullName == name && type.IsPublic, "Недоступен публичный тип " + name);
-            Check(type.IsClass && !type.IsGenericType, "Изменён вид типа " + name);
-            Check(HasBase(type, baseType), "Изменён базовый тип " + name + ": ожидался " + baseType);
+            var type = typeof(Topomatic.ToolBridge.ToolProvider).Assembly.GetType(name);
+            if (type == null)
+            {
+                Test.Fail("Недоступен публичный тип " + name);
+                return;
+            }
+            Test.Assert(type.FullName == name && type.IsPublic, "Недоступен публичный тип " + name);
+            Test.Assert(type.IsClass && !type.IsGenericType, "Изменён вид типа " + name);
+            Test.Assert(HasBase(type, baseType), "Изменён базовый тип " + name + ": ожидался " + baseType);
             if ((baseline & TypeAttributes.Sealed) == 0)
-                Check(!type.IsSealed, "Запрещено наследование от " + name);
+                Test.Assert(!type.IsSealed, "Запрещено наследование от " + name);
             if ((baseline & TypeAttributes.Abstract) == 0)
-                Check(!type.IsAbstract, "Тип стал абстрактным: " + name);
+                Test.Assert(!type.IsAbstract, "Тип стал абстрактным: " + name);
             if ((baseline & (TypeAttributes.Abstract | TypeAttributes.Sealed)) ==
                 (TypeAttributes.Abstract | TypeAttributes.Sealed))
-                Check(type.IsAbstract && type.IsSealed, "Тип перестал быть статическим: " + name);
+                Test.Assert(type.IsAbstract && type.IsSealed, "Тип перестал быть статическим: " + name);
 
             var methods = type.GetMethods(Members).Cast<MethodBase>()
                 .Concat(type.GetConstructors(Members)).ToArray();
@@ -32,7 +38,7 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
                 var isPublic = expected.StartsWith("public ", StringComparison.Ordinal);
                 var signature = expected.Substring(expected.IndexOf(' ') + 1);
                 var candidates = methods.Where(m => MethodSignature(m) == signature);
-                Check(candidates.Any(m => IsAccessible(m, isPublic) && !m.IsAbstract),
+                Test.Assert(candidates.Any(m => IsAccessible(m, isPublic) && !m.IsAbstract),
                     name + ": недоступен член " + expected);
             }
 
@@ -43,7 +49,7 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
 
             var properties = new HashSet<string>(type.GetProperties(Members).Select(PropertySignature), StringComparer.Ordinal);
             foreach (var expected in expectedProperties)
-                Check(properties.Contains(expected), name + ": недоступно свойство " + expected);
+                Test.Assert(properties.Contains(expected), name + ": недоступно свойство " + expected);
         }
 
         private static bool IsAccessible(MethodBase method, bool requirePublic) =>
@@ -54,11 +60,6 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
             for (var current = type.BaseType; current != null; current = current.BaseType)
                 if (current.FullName == expected) return true;
             return false;
-        }
-
-        private static void Check(bool condition, string message)
-        {
-            if (!condition) Test.Fail(message);
         }
 
         private static string MethodSignature(MethodBase member)

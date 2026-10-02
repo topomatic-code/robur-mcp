@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using Topomatic.Cad.Foundation;
 using Topomatic.ToolBridge.Exceptions;
+using Topomatic.ToolBridge.Infrastructure;
+using Topomatic.ToolBridge.Services;
 using Topomatic.ToolBridge.Utils;
 using Topomatic.Visualization;
 using Topomatic.Visualization.Constructions;
@@ -75,8 +77,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateTlcModel(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var scriptPath = JsonUtils.RequireString(args, "scriptPath");
             var position = JsonUtils.RequireVector3D(args, "position");
@@ -91,11 +94,8 @@ namespace Topomatic.ToolBridge.Tools
             var includeConsoleOutput = JsonUtils.GetBool(args, "includeConsoleOutput", false).Value;
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Вставка Tlc-модели \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Вставка Tlc-модели \"{name}\""));
             try
             {
                 var tlcModel = LoadTlcModel(scriptPath);
@@ -223,8 +223,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateTlcModel(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -241,11 +242,8 @@ namespace Topomatic.ToolBridge.Tools
                 throw new BadRequestException("Нормаль Tlc-модели не может быть нулевой.");
             var (tlcEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
             var tlcModel = DwgUtils.RequireTlcElement(tlcEntity, guidStr);
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление Tlc-модели \"{name ?? currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление Tlc-модели \"{name ?? currentName ?? "none"}\""));
             try
             {
                 if (!tlcEntity.HasExtensionDictionary)
@@ -500,8 +498,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetTlcModelScript(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var (tlcEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
@@ -566,8 +565,9 @@ namespace Topomatic.ToolBridge.Tools
             }
             else if (string.Equals(source, "Model", StringComparison.OrdinalIgnoreCase))
             {
-                var drawing = DwgUtils.RequireDrawing(CadView);
-                var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+                var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+                var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+                var sessionStorage = Container.GetSingleton<IObjectStorage>();
                 var guidStr = JsonUtils.RequireString(args, "guid");
                 var guid = DwgUtils.ParseGuid(guidStr);
                 var (tlcEntity, _) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
@@ -637,8 +637,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateTlcModelSection(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var position = JsonUtils.RequireVector3D(args, "position");
             var normal = JsonUtils.RequireVector3D(args, "normal");

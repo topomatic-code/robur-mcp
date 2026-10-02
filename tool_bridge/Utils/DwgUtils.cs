@@ -33,7 +33,7 @@ namespace Topomatic.ToolBridge
                 throw new PreconditionFailedException("Не удалось получить активный чертеж.");
         }
 
-        public static ObjectStorage RequireSessionStorage(ObjectStorage sessionStorage)
+        public static IObjectStorage RequireSessionStorage(IObjectStorage sessionStorage)
         {
             return sessionStorage ??
                 throw new InvalidOperationException("Хранилище текущего сеанса недоступно.");
@@ -68,7 +68,10 @@ namespace Topomatic.ToolBridge
             return layer.Drawing;
         }
 
-        public static (T entity, string name) FindEntity<T>(Drawing drawing, ObjectStorage sessionStorage, Guid guid) where T : DwgEntity
+        public static (T entity, string name) FindEntity<T>(Drawing drawing, ObjectStorage sessionStorage, Guid guid) where T : DwgEntity =>
+            FindEntity<T>(drawing, sessionStorage, guid);
+
+        public static (T entity, string name) FindEntity<T>(Drawing drawing, IObjectStorage sessionStorage, Guid guid) where T : DwgEntity
         {
             var guidStr = guid.ToString();
             T entity = null;

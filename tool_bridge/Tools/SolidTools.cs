@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Topomatic.Cad.Foundation;
 using Topomatic.ToolBridge.Exceptions;
+using Topomatic.ToolBridge.Infrastructure;
+using Topomatic.ToolBridge.Services;
 using Topomatic.Visualization;
 using Topomatic.Visualization.Runtime;
 
@@ -31,19 +33,17 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateSolid(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание пустого твердого тела \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание пустого твердого тела \"{name}\""));
             try
             {
                 var emptyShell = new Cad.Foundation.Brep.Shell();
@@ -116,8 +116,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object AddFaces(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var faces = JsonUtils.RequireArray(args, "faces");
             var guid = DwgUtils.ParseGuid(guidStr);
@@ -126,12 +127,9 @@ namespace Topomatic.ToolBridge.Tools
             var shell = new Cad.Foundation.Brep.Shell();
             Cad.Foundation.Brep.Tools.Copy(solidElement.GetBrep(), shell);
             AddFacesToShell(shell, faces);
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString(
-                    $"Добавление граней твердого тела \"{currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString(
+                $"Добавление граней твердого тела \"{currentName ?? "none"}\""));
             try
             {
                 var newSolidElement = new StaticSolidElement(
@@ -199,8 +197,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetFaces(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var (solidEntity, currentName) = DwgUtils.FindEntity<DwgModel3DElement>(drawing, sessionStorage, guid);
@@ -272,8 +271,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Section(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var positionObject = JsonUtils.RequireObject(args, "position");
             var normalObject = JsonUtils.RequireObject(args, "normal");
@@ -378,8 +378,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveFaces(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var faceIndexes = JsonUtils.RequireIntArray(args, "faceIndexes");
             if (faceIndexes.Length == 0)
@@ -400,12 +401,9 @@ namespace Topomatic.ToolBridge.Tools
                     facesToRemove.Add(shellFaces[faceIndex]);
             }
             Cad.Foundation.Brep.Tools.RemoveFaces(shell, facesToRemove);
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString(
-                    $"Удаление граней твердого тела \"{currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString(
+                $"Удаление граней твердого тела \"{currentName ?? "none"}\""));
             try
             {
                 var newSolidElement = new StaticSolidElement(
@@ -475,8 +473,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Transform(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var operation = JsonUtils.RequireString(args, "operation");
             var elements = JsonUtils.RequireStringArray(args, "elements");
             var parameters = JsonUtils.RequireObject(args, "parameters");
@@ -493,11 +492,8 @@ namespace Topomatic.ToolBridge.Tools
                 var solidElement = DwgUtils.RequireSolidElement(solidEntity, guidStr);
                 solids.Add((guidStr, solidEntity, solidElement, currentName ?? "none"));
             }
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString("Трансформация твердых тел"));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString("Трансформация твердых тел"));
             try
             {
                 var results = new List<object>(solids.Count);
@@ -664,8 +660,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Sweep(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var section = JsonUtils.RequireArray(args, "section");
             var curve = JsonUtils.RequireArray(args, "curve");
@@ -743,11 +740,8 @@ namespace Topomatic.ToolBridge.Tools
             }
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Операция вытягивания \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Операция вытягивания \"{name}\""));
             try
             {
                 var solidEntity = new DwgModel3DElement();
@@ -804,8 +798,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Union(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var elements = JsonUtils.RequireStringArray(args, "elements");
             if (elements.Length < 2)
@@ -832,11 +827,8 @@ namespace Topomatic.ToolBridge.Tools
             Cad.Foundation.Brep.Tools.SimplifyFaces(resultShell);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Объединение твердых тел \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Объединение твердых тел \"{name}\""));
             try
             {
                 for (int i = 0; i < initialEntities.Count; i++)
@@ -898,8 +890,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Intersection(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var elements = JsonUtils.RequireStringArray(args, "elements");
             if (elements.Length < 2)
@@ -926,11 +919,8 @@ namespace Topomatic.ToolBridge.Tools
             Cad.Foundation.Brep.Tools.SimplifyFaces(resultShell);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Пересечение твердых тел \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Пересечение твердых тел \"{name}\""));
             try
             {
                 for (int i = 0; i < initialEntities.Count; i++)
@@ -992,8 +982,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Difference(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var elements = JsonUtils.RequireStringArray(args, "elements");
             if (elements.Length < 2)
@@ -1020,11 +1011,8 @@ namespace Topomatic.ToolBridge.Tools
             Cad.Foundation.Brep.Tools.SimplifyFaces(resultShell);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Вычитание твердых тел \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Вычитание твердых тел \"{name}\""));
             try
             {
                 for (int i = 0; i < initialEntities.Count; i++)

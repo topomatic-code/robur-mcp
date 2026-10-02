@@ -1,121 +1,95 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
 using Topomatic.Cad.View;
 using Topomatic.ToolBridge;
+using Topomatic.ToolBridge.DependencyInjection;
+using Topomatic.ToolBridge.Infrastructure;
+using Topomatic.ToolBridge.Infrastructure.Implementation;
 using Topomatic.ToolBridge.Services;
+using Topomatic.ToolBridge.Settings;
+using Topomatic.ToolBridge.Settings.Implementation;
 
 namespace ToolBridge.Tests.ApiCheck_v0_1_0
 {
-    // Adapter to current host internals. These names are not part of the API 0.1.0 baseline.
     internal static class IntegrationHost
     {
-        private const BindingFlags Methods = BindingFlags.Public | BindingFlags.NonPublic |
-            BindingFlags.Instance | BindingFlags.Static;
+        internal const string DomainToolName = "current_domain_tool";
 
-        internal static Array Generate(ToolProvider provider)
-        {
-            var tools = Invoke(typeof(ToolProvider), provider, "GetTools", Type.EmptyTypes);
-            return ToArray(TypeOf("Tool"), tools);
-        }
+        internal static Tool[] Generate(ToolProvider provider) => provider.GetTools().ToArray();
 
-        internal static object CreateManager(Array tools, ObjectStorage storage, ToolBridgeLogger logger, Func<CadView> view)
+        internal static IToolManager CreateManager(IEnumerable<Tool> tools, IObjectStorage storage, IToolBridgeLogger logger, Func<CadView> view)
         {
-            var type = TypeOf("ToolManager");
-            var manager = Activator.CreateInstance(type, new object[] { storage, logger, view });
-            Invoke(type, manager, "Initialize",
-                new[] { typeof(IEnumerable<>).MakeGenericType(TypeOf("Tool")) }, tools);
+            var container = new Container();
+            container.RegisterSingleton<IContainer>(() => container);
+            container.RegisterSingleton<IToolCollector>(() => new LocalCollector(tools));
+            container.RegisterSingleton<IObjectStorage>(() => storage);
+            container.RegisterSingleton<IToolBridgeLogger>(() => logger);
+            container.RegisterSingleton<ICadViewProvider>(() => new LocalViewProvider(view));
+            container.RegisterType<IToolManager, ToolManager>();
+            var manager = container.CreateInstance<IToolManager>();
+            manager.Initialize();
             return manager;
         }
 
-        internal static string[] GetToolNames(object manager)
-        {
-            return Names(Invoke(manager.GetType(), manager, "GetTools", Type.EmptyTypes));
-        }
+        internal static string[] GetToolNames(IToolManager manager) =>
+            manager.GetTools().Select(tool => tool.Name).ToArray();
 
-        internal static void Call(object manager, string name)
+        internal static void Call(IToolManager manager, string name)
         {
-            Invoke(manager.GetType(), manager, "CallTool", new[] { typeof(Dictionary<string, object>) },
-                new Dictionary<string, object>
-                {
-                    { "tool_name", name },
-                    { "arguments", new Dictionary<string, object>() }
-                });
-        }
-
-        internal static string[] CreateConfigurationNames(Array tools, bool includeDomain)
-        {
-            var configType = TypeOf("Settings.ToolConfig");
-            var saved = Array.CreateInstance(configType, includeDomain ? 1 : 0);
-            if (includeDomain)
+            manager.CallTool(new Dictionary<string, object>
             {
-                var config = Activator.CreateInstance(configType, new object[]
-                {
-                    "current_domain_tool", "Current", "API compatibility probe", "{\"type\":\"object\"}",
-                    true, false, true
-                });
-                saved.SetValue(config, 0);
+                { "tool_name", name },
+                { "arguments", new Dictionary<string, object>() }
+            });
+        }
+
+        internal static string[] CreateConfigurationNames(IEnumerable<Tool> tools, bool includeDomain)
+        {
+            var container = new Container();
+            container.RegisterSingleton<IToolCollector>(() => new LocalCollector(tools));
+            container.RegisterSingleton<IToolConfigLoader>(() => new MemoryConfigLoader(includeDomain));
+            container.RegisterType<IToolSettings, ToolSettings>();
+            var settings = container.CreateInstance<IToolSettings>();
+            return settings.ToolConfigs.Select(config => config.Name).ToArray();
+        }
+
+        private sealed class LocalCollector : IToolCollector
+        {
+            public LocalCollector(IEnumerable<Tool> tools)
+            {
+                Tools = tools.ToList().AsReadOnly();
             }
-            var configs = Invoke(TypeOf("Settings.ToolConfigFactory"), null, "Create", new[]
-            {
-                typeof(IEnumerable<>).MakeGenericType(TypeOf("Tool")),
-                typeof(IEnumerable<>).MakeGenericType(configType)
-            }, tools, saved);
-            return Names(configs);
+
+            public IList<Tool> Tools { get; }
         }
 
-        private static Type TypeOf(string name)
+        private sealed class LocalViewProvider : ICadViewProvider
         {
-            var type = typeof(ToolProvider).Assembly.GetType("Topomatic.ToolBridge." + name);
-            Test.Require(type != null, "Адаптер интеграционных тестов: не найден тип " + name);
-            return type;
+            private readonly Func<CadView> m_GetView;
+
+            public LocalViewProvider(Func<CadView> getView) { m_GetView = getView; }
+            public CadView CadView => m_GetView();
         }
 
-        private static object Invoke(Type type, object instance, string name, Type[] parameters, params object[] arguments)
+        private sealed class MemoryConfigLoader : IToolConfigLoader
         {
-            var method = type.GetMethod(name, Methods, null, parameters, null);
-            Test.Require(method != null, "Адаптер интеграционных тестов: не найден метод " + type.FullName + "." + name);
-            try
+            private readonly bool m_IncludeDomain;
+
+            public MemoryConfigLoader(bool includeDomain) { m_IncludeDomain = includeDomain; }
+
+            public List<ToolConfig> Load()
             {
-                return method.Invoke(instance, arguments);
+                var configs = new List<ToolConfig>();
+                if (m_IncludeDomain)
+                    configs.Add(new ToolConfig(DomainToolName, "Current", "API compatibility probe",
+                        "{\"type\":\"object\"}", true, false, true));
+                return configs;
             }
-            catch (TargetInvocationException ex) when (ex.InnerException != null)
-            {
-                ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
-                throw;
-            }
-        }
 
-        private static Array ToArray(Type elementType, object collection)
-        {
-            var items = Items(collection).ToArray();
-            var result = Array.CreateInstance(elementType, items.Length);
-            for (var i = 0; i < items.Length; i++)
-                result.SetValue(items[i], i);
-            return result;
-        }
-
-        private static string[] Names(object collection)
-        {
-            return Items(collection).Select(item =>
+            public void Save(List<ToolConfig> toolConfigs)
             {
-                var property = item.GetType().GetProperty("Name");
-                Test.Require(property != null, "Адаптер интеграционных тестов: отсутствует свойство Name.");
-                return (string)property.GetValue(item);
-            }).ToArray();
-        }
-
-        private static IEnumerable<object> Items(object collection)
-        {
-            var items = collection as IEnumerable;
-            Test.Require(items != null, "Адаптер интеграционных тестов: ожидалась коллекция.");
-            foreach (var item in items)
-            {
-                Test.Require(item != null, "Коллекция содержит пустой элемент.");
-                yield return item;
+                throw new InvalidOperationException("Проверка загрузки конфигураций не должна вызывать сохранение.");
             }
         }
     }

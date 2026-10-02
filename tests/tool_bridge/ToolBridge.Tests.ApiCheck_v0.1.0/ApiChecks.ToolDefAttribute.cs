@@ -10,12 +10,11 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         internal static void CheckToolDefAttributeApi()
         {
             // Fixed contract from the 0.1.0 reference assembly; additions are allowed.
-            ApiContract.Verify(typeof(global::Topomatic.ToolBridge.ToolDefAttribute),
-                "Topomatic.ToolBridge.ToolDefAttribute", "System.Attribute",
+            ApiContract.Verify("Topomatic.ToolBridge.ToolDefAttribute", "System.Attribute",
                 TypeAttributes.Public | TypeAttributes.Sealed,
-            new[]
-            {
-                "public instance get_Name() -> String",
+                new[]
+                {
+                    "public instance get_Name() -> String",
                     "public instance set_Name(String) -> Void",
                     "public instance get_Description() -> String",
                     "public instance set_Description(String) -> Void",

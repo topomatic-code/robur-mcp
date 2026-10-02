@@ -10,12 +10,11 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         internal static void CheckToolProviderApi()
         {
             // Fixed contract from the 0.1.0 reference assembly; additions are allowed.
-            ApiContract.Verify(typeof(global::Topomatic.ToolBridge.ToolProvider),
-                "Topomatic.ToolBridge.ToolProvider", "System.Object",
+            ApiContract.Verify("Topomatic.ToolBridge.ToolProvider", "System.Object",
                 TypeAttributes.Public | TypeAttributes.Abstract,
-            new[]
-            {
-                "public instance get_AppHost() -> Topomatic.ApplicationPlatform.IApplicationHost",
+                new[]
+                {
+                    "public instance get_AppHost() -> Topomatic.ApplicationPlatform.IApplicationHost",
                     "public instance set_AppHost(Topomatic.ApplicationPlatform.IApplicationHost) -> Void",
                     "public instance get_CadView() -> Topomatic.Cad.View.CadView",
                     "public instance set_CadView(Topomatic.Cad.View.CadView) -> Void",

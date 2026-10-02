@@ -10,12 +10,11 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         internal static void CheckDwgUtilsApi()
         {
             // Fixed contract from the 0.1.0 reference assembly; additions are allowed.
-            ApiContract.Verify(typeof(global::Topomatic.ToolBridge.DwgUtils),
-                "Topomatic.ToolBridge.DwgUtils", "System.Object",
+            ApiContract.Verify("Topomatic.ToolBridge.DwgUtils", "System.Object",
                 TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed,
-            new[]
-            {
-                "public static GetDrawing(Topomatic.Cad.View.CadView) -> Topomatic.Dwg.Drawing",
+                new[]
+                {
+                    "public static GetDrawing(Topomatic.Cad.View.CadView) -> Topomatic.Dwg.Drawing",
                     "public static FindEntity<!!0>(Topomatic.Dwg.Drawing,Topomatic.ToolBridge.Services.ObjectStorage,System.Guid) -> System.ValueTuple`2<!!0,String> where !!0:None[Topomatic.Dwg.Entities.DwgEntity]",
                     "public static GetEntityType(Topomatic.Dwg.Entities.DwgEntity) -> System.ValueTuple`2<String,String>",
                     "public static CreateEntityObj(Topomatic.Dwg.Entities.DwgEntity,String,String) -> Object",

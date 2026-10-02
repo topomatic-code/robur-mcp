@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using Topomatic.Cad.Foundation;
 using Topomatic.Landscaping;
 using Topomatic.ToolBridge.Exceptions;
+using Topomatic.ToolBridge.Infrastructure;
+using Topomatic.ToolBridge.Services;
 using Topomatic.Visualization;
 
 namespace Topomatic.ToolBridge.Tools
@@ -104,8 +106,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreatePointPlant(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var libUid = JsonUtils.RequireString(args, "libUid");
             var plantElement = RequirePlantElement(libUid);
@@ -117,11 +120,8 @@ namespace Topomatic.ToolBridge.Tools
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание точечной посадки \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание точечной посадки \"{name}\""));
             try
             {
                 var pointPlant = new DwgSmdxPointLandscaping();

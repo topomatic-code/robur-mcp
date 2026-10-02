@@ -10,12 +10,11 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         internal static void CheckJsonUtilsApi()
         {
             // Fixed contract from the 0.1.0 reference assembly; additions are allowed.
-            ApiContract.Verify(typeof(global::Topomatic.ToolBridge.JsonUtils),
-                "Topomatic.ToolBridge.JsonUtils", "System.Object",
+            ApiContract.Verify("Topomatic.ToolBridge.JsonUtils", "System.Object",
                 TypeAttributes.Public | TypeAttributes.Abstract | TypeAttributes.Sealed,
-            new[]
-            {
-                "public static UnwrapJsonValue(Object) -> Object",
+                new[]
+                {
+                    "public static UnwrapJsonValue(Object) -> Object",
                     "public static GetObject(System.Collections.Generic.Dictionary`2<String,Object>,String,System.Collections.Generic.Dictionary`2<String,Object>) -> System.Collections.Generic.Dictionary`2<String,Object>",
                     "public static RequireObject(System.Collections.Generic.Dictionary`2<String,Object>,String) -> System.Collections.Generic.Dictionary`2<String,Object>",
                     "public static GetString(System.Collections.Generic.Dictionary`2<String,Object>,String,String) -> String",

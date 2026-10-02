@@ -168,13 +168,14 @@ namespace Topomatic.ToolBridge.Tools
             };
         }
 
-        private static (string name, Culvert culvert) GetCulvert(string uriValue)
+        private (string name, Culvert culvert) GetCulvert(string uriValue)
         {
             if (string.IsNullOrWhiteSpace(uriValue))
                 throw new BadRequestException("URI водопропускной трубы не может быть пустым.");
 
             var uri = new URI(uriValue);
-            var culvertNode = ProjectManager.Instance.GetNode(uri) ??
+            var projectManager = Container.GetSingleton<IProjectManager>();
+            var culvertNode = projectManager.GetNode(uri) ??
                 throw new PreconditionFailedException($"Не удалось найти водопропускную трубу в структуре проекта по указанному uri {uriValue}.");
             var culvertModel = culvertNode.Model ??
                 throw new PreconditionFailedException("Модель водопропускной трубы недоступна.");

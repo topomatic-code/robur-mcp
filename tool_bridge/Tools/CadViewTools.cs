@@ -4,6 +4,7 @@ using Topomatic.Cad.Foundation;
 using Topomatic.Cad.View;
 using Topomatic.Cad.View.Hints;
 using Topomatic.ToolBridge.Exceptions;
+using Topomatic.ToolBridge.Infrastructure;
 
 namespace Topomatic.ToolBridge.Tools
 {
@@ -27,7 +28,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetPoint(Dictionary<string, object> args)
         {
-            var cadView = DwgUtils.RequireCadView(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var cadView = DwgUtils.RequireCadView(cadViewProvider.CadView);
             var message = JsonUtils.RequireString(args, "message");
             if (!CadCursors.GetPoint(cadView, out var point, message))
                 throw new ToolExecutionFailedException("Пользователь отменил ввод точки.");
@@ -65,7 +67,8 @@ namespace Topomatic.ToolBridge.Tools
             const string CLOSE_CONTOUR = "Замкнуть контур";
             const string END_INPUT = "Завершить ввод";
 
-            var cadView = DwgUtils.RequireCadView(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var cadView = DwgUtils.RequireCadView(cadViewProvider.CadView);
             var message = JsonUtils.RequireString(args, "message");
             var positions = new List<Vector2D>();
 
@@ -177,7 +180,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object Zoom(Dictionary<string, object> args)
         {
-            var cadView = DwgUtils.RequireCadView(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var cadView = DwgUtils.RequireCadView(cadViewProvider.CadView);
             var minObj = JsonUtils.RequireObject(args, "min");
             var min = new Vector2D(
                 JsonUtils.RequireDouble(minObj, "x"),

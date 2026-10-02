@@ -22,14 +22,14 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal void CheckDiscovery()
         {
-            LegacyToolProvider.Discover();
+            ProbeToolProvider.Discover();
         }
 
         [Test]
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal void CheckGenerationWithoutDomain()
         {
-            var provider = new LegacyToolProvider();
+            var provider = new ProbeToolProvider();
             var tools = IntegrationHost.Generate(provider);
             Test.Require(tools.Length == 2, "Должны быть созданы оба инструмента API 0.1.0 без Domain.");
             Test.Require(provider.InvocationCount == 0, "Генерация вызвала обработчик инструмента.");
@@ -39,19 +39,19 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal void CheckConfigurationsWithoutDomain()
         {
-            var tools = IntegrationHost.Generate(new LegacyToolProvider());
-            RequireLegacyNames(IntegrationHost.CreateConfigurationNames(tools, false), 2);
-            RequireLegacyNames(IntegrationHost.CreateConfigurationNames(tools, true), 3);
+            var tools = IntegrationHost.Generate(new ProbeToolProvider());
+            RequireToolNames(IntegrationHost.CreateConfigurationNames(tools, false));
+            RequireToolNames(IntegrationHost.CreateConfigurationNames(tools, true), IntegrationHost.DomainToolName);
         }
 
         [Test]
         [MethodImpl(MethodImplOptions.NoInlining)]
         internal void CheckAvailability()
         {
-            var provider = LegacyToolProvider.Discover();
+            var provider = ProbeToolProvider.Discover();
             var manager = IntegrationHost.CreateManager(IntegrationHost.Generate(provider),
                 new ObjectStorage(), ToolBridgeLogger.Instance, () => null);
-            RequireLegacyNames(IntegrationHost.GetToolNames(manager), 2);
+            RequireToolNames(IntegrationHost.GetToolNames(manager));
             Test.Require(provider.InvocationCount == 0, "Получение списка вызвало обработчик инструмента.");
         }
 
@@ -60,16 +60,16 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         internal void CheckInvocation()
         {
             var view = RequireCadView();
-            var provider = LegacyToolProvider.Discover();
+            var provider = ProbeToolProvider.Discover();
             var calls = new List<string>();
             provider.OnInvoke = (name, instance) => calls.Add(name);
             var manager = IntegrationHost.CreateManager(IntegrationHost.Generate(provider),
                 new ObjectStorage(), ToolBridgeLogger.Instance, () => view);
 
-            IntegrationHost.Call(manager, LegacyToolProvider.FirstName);
-            IntegrationHost.Call(manager, LegacyToolProvider.SecondName);
-            Test.Require(calls.SequenceEqual(new[] { LegacyToolProvider.FirstName, LegacyToolProvider.SecondName }),
-                "Вызовы должны передать управление соответствующим обработчикам старого провайдера ровно по одному разу.");
+            IntegrationHost.Call(manager, ProbeToolProvider.FirstName);
+            IntegrationHost.Call(manager, ProbeToolProvider.SecondName);
+            Test.Require(calls.SequenceEqual(new[] { ProbeToolProvider.FirstName, ProbeToolProvider.SecondName }),
+                "Вызовы должны передать управление соответствующим обработчикам тестового провайдера ровно по одному разу.");
         }
 
         [Test]
@@ -80,7 +80,7 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
             var host = ApplicationHost.Current;
             var storage = new ObjectStorage();
             var logger = ToolBridgeLogger.Instance;
-            var provider = LegacyToolProvider.Discover();
+            var provider = ProbeToolProvider.Discover();
             provider.OnInvoke = (name, instance) =>
             {
                 Test.Require(ReferenceEquals(instance.AppHost, host), "Обработчик не получил текущий AppHost.");
@@ -89,7 +89,7 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
                 Test.Require(ReferenceEquals(instance.Logger, logger), "Обработчик не получил Logger менеджера.");
             };
             var manager = IntegrationHost.CreateManager(IntegrationHost.Generate(provider), storage, logger, () => view);
-            foreach (var name in new[] { LegacyToolProvider.FirstName, LegacyToolProvider.SecondName })
+            foreach (var name in new[] { ProbeToolProvider.FirstName, ProbeToolProvider.SecondName })
             {
                 // Each dispatch must supply context, including after the provider clears it.
                 provider.AppHost = null;
@@ -104,16 +104,16 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         private CadView RequireCadView()
         {
             var view = m_GetCadView();
-            Test.Require(view != null, "Для проверки вызова старого провайдера откройте видовой экран Robur.");
+            Test.Require(view != null, "Для проверки вызова тестового провайдера откройте видовой экран Robur.");
             return view;
         }
 
-        private static void RequireLegacyNames(string[] names, int expectedCount)
+        private static void RequireToolNames(string[] names, params string[] additionalNames)
         {
-            Test.Require(names.Length == expectedCount &&
-                names.Count(name => name == LegacyToolProvider.FirstName) == 1 &&
-                names.Count(name => name == LegacyToolProvider.SecondName) == 1,
-                "Оба инструмента API 0.1.0 должны быть доступны по объявленным именам без повторов.");
+            var expected = new[] { ProbeToolProvider.FirstName, ProbeToolProvider.SecondName }.Concat(additionalNames);
+            Test.Require(names.OrderBy(name => name, StringComparer.Ordinal)
+                .SequenceEqual(expected.OrderBy(name => name, StringComparer.Ordinal), StringComparer.Ordinal),
+                "Список должен содержать все ожидаемые инструменты без пропусков, повторов и лишних элементов.");
         }
     }
 }

@@ -10,12 +10,11 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         internal static void CheckObjectStorageApi()
         {
             // Fixed contract from the 0.1.0 reference assembly; additions are allowed.
-            ApiContract.Verify(typeof(global::Topomatic.ToolBridge.Services.ObjectStorage),
-                "Topomatic.ToolBridge.Services.ObjectStorage", "System.Object",
+            ApiContract.Verify("Topomatic.ToolBridge.Services.ObjectStorage", "System.Object",
                 TypeAttributes.Public | TypeAttributes.Sealed,
-            new[]
-            {
-                "public instance .ctor() -> Void",
+                new[]
+                {
+                    "public instance .ctor() -> Void",
                     "public instance AddObject(Object) -> System.Guid",
                     "public instance AddObject(System.Guid,Object) -> Void",
                     "public instance GetObject(System.Guid) -> Object",

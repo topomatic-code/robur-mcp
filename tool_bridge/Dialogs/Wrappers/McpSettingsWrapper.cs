@@ -20,15 +20,18 @@ namespace Topomatic.ToolBridge.Dialogs.Wrappers
             RegexOptions.CultureInvariant
         );
 
+        private readonly IMcpSettings m_McpSettings;
+
         private string m_Host;
         private string m_Port;
 
-        public McpSettingsWrapper(bool mcpRunning)
+        public McpSettingsWrapper(IMcpSettings mcpSettings, bool mcpRunning)
         {
+            m_McpSettings = mcpSettings;
             McpRunning = mcpRunning;
-            m_Host = McpSettings.Host;
-            m_Port = McpSettings.Port;
-            AutoRun = McpSettings.AutoRun;
+            m_Host = m_McpSettings.Host;
+            m_Port = m_McpSettings.Port;
+            AutoRun = m_McpSettings.AutoRun;
         }
 
         [Obfuscation(Exclude = true, StripAfterObfuscation = true)]
@@ -91,10 +94,10 @@ namespace Topomatic.ToolBridge.Dialogs.Wrappers
 
         public void SaveChanges()
         {
-            McpSettings.Host = m_Host;
-            McpSettings.Port = m_Port;
-            McpSettings.AutoRun = AutoRun;
-            McpSettings.Save();
+            m_McpSettings.Host = m_Host;
+            m_McpSettings.Port = m_Port;
+            m_McpSettings.AutoRun = AutoRun;
+            m_McpSettings.Save();
         }
     }
 }

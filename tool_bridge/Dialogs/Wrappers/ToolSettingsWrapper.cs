@@ -6,9 +6,13 @@ namespace Topomatic.ToolBridge.Dialogs.Wrappers
 {
     internal sealed class ToolSettingsWrapper
     {
-        public ToolSettingsWrapper()
+        private readonly IToolSettings m_ToolSettings;
+
+        public ToolSettingsWrapper(IToolSettings toolSettings)
         {
-            ToolConfigs = ToolSettings.ToolConfigs
+            m_ToolSettings = toolSettings;
+
+            ToolConfigs = m_ToolSettings.ToolConfigs
                 .Select(cfg => new ToolConfigWrapper(cfg))
                 .ToList()
                 .AsReadOnly();
@@ -22,7 +26,7 @@ namespace Topomatic.ToolBridge.Dialogs.Wrappers
             {
                 toolConfig.SaveChanges();
             }
-            ToolSettings.Save();
+            m_ToolSettings.Save();
         }
     }
 }

@@ -5,6 +5,8 @@ using Topomatic.Cad.Foundation;
 using Topomatic.Dwg;
 using Topomatic.Dwg.Entities;
 using Topomatic.ToolBridge.Exceptions;
+using Topomatic.ToolBridge.Infrastructure;
+using Topomatic.ToolBridge.Services;
 
 namespace Topomatic.ToolBridge.Tools
 {
@@ -23,7 +25,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetActiveDrawingInfo(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var activeSpaceBounds = drawing.ActiveSpace.Bounds;
             return new
             {
@@ -69,7 +72,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object AddLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var name = JsonUtils.RequireString(args, "name");
             var description = JsonUtils.GetString(args, "description", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
@@ -80,11 +84,8 @@ namespace Topomatic.ToolBridge.Tools
                 throw new PreconditionFailedException($"Слой с именем {name} уже содержится в активном чертеже.");
             if (colorIndex != null && colorIndex.Value < 0)
                 throw new BadRequestException("Индекс цвета слоя не может быть отрицательным.");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание слоя \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание слоя \"{name}\""));
             try
             {
                 var layer = drawing.Layers.Add(name) ?? throw new ToolExecutionFailedException("Не удалось создать слой.");
@@ -129,7 +130,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var currentName = JsonUtils.RequireString(args, "currentName");
             var name = JsonUtils.GetString(args, "name", null);
             var description = JsonUtils.GetString(args, "description", null);
@@ -146,11 +148,8 @@ namespace Topomatic.ToolBridge.Tools
             if (name != null && !string.Equals(currentName, name) && drawing.Layers.IsExists(name))
                 throw new PreconditionFailedException($"Слой с именем {name} уже содержится в активном чертеже.");
             var layer = drawing.Layers[currentName] ?? throw new InvalidOperationException($"Не удалось получить слой с именем {currentName}.");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление слоя \"{currentName}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление слоя \"{currentName}\""));
             try
             {
                 if (name != null)
@@ -192,7 +191,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
                 throw new BadRequestException("Имя слоя не может быть пустым.");
@@ -202,11 +202,8 @@ namespace Topomatic.ToolBridge.Tools
             if (layer.IsSystem)
                 throw new PreconditionFailedException($"Системный слой {name} нельзя удалить.");
             var result = CreateLayerObj(layer);
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Удаление слоя \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Удаление слоя \"{name}\""));
             try
             {
                 if (!drawing.Layers.Remove(name))
@@ -242,17 +239,15 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetActiveLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
                 throw new BadRequestException("Имя слоя не может быть пустым.");
             if (!drawing.Layers.IsExists(name))
                 throw new PreconditionFailedException($"Слой с именем {name} не содержится в активном чертеже.");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Установка активного слоя \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Установка активного слоя \"{name}\""));
             try
             {
                 var layer = drawing.Layers.ActivateLayer(name) ?? throw new ToolExecutionFailedException($"Не удалось активировать слой с именем {name}.");
@@ -304,8 +299,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetEntitiesLayer(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidArray = JsonUtils.RequireStringArray(args, "guids");
             var layerName = JsonUtils.RequireString(args, "layerName");
             if (guidArray.Length == 0)
@@ -321,11 +317,8 @@ namespace Topomatic.ToolBridge.Tools
                 var (type, typeDescription) = DwgUtils.GetEntityType(entity);
                 entities.Add((guidStr, entity, name ?? "none", type, typeDescription));
             }
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Установка слоя \"{layerName}\" для {entities.Count} сущностей"));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Установка слоя \"{layerName}\" для {entities.Count} сущностей"));
             try
             {
                 foreach (var entityInfo in entities)
@@ -388,8 +381,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetEntitiesColor(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidArray = JsonUtils.RequireStringArray(args, "guids");
             var colorMode = JsonUtils.RequireString(args, "colorMode");
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
@@ -406,11 +400,8 @@ namespace Topomatic.ToolBridge.Tools
                 var (type, typeDescription) = DwgUtils.GetEntityType(entity);
                 entities.Add((guidStr, entity, name ?? "none", type, typeDescription));
             }
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Установка цвета {colorMode} для {entities.Count} сущностей"));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Установка цвета {colorMode} для {entities.Count} сущностей"));
             try
             {
                 foreach (var entityInfo in entities)
@@ -460,8 +451,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetEntities(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var startIndex = JsonUtils.RequireInt(args, "startIndex");
             var endIndex = JsonUtils.RequireInt(args, "endIndex");
             var drawingEntities = drawing.ActiveSpace.Entities;
@@ -526,8 +518,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetActiveSpaceEntity(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var (resultEntity, name) = DwgUtils.FindEntity<DwgEntity>(drawing, sessionStorage, guid);
@@ -577,8 +570,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreatePolyline(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var pointArray = JsonUtils.RequireArray(args, "points");
             var layerName = JsonUtils.GetString(args, "layerName", null);
@@ -595,11 +589,8 @@ namespace Topomatic.ToolBridge.Tools
             var closed = JsonUtils.RequireBool(args, "closed");
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание полилинии \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание полилинии \"{name}\""));
             try
             {
                 var polyline = drawing.ActiveSpace.AddPolyline(points);
@@ -662,8 +653,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdatePolyline(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -675,11 +667,8 @@ namespace Topomatic.ToolBridge.Tools
             var (polyline, currentName) = DwgUtils.FindEntity<DwgPolyline>(drawing, sessionStorage, guid);
             if (polyline == null)
                 throw new PreconditionFailedException($"Не удалось найти полилинию по указанному guid \"{guidStr}\".");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление полилинии \"{name ?? currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление полилинии \"{name ?? currentName ?? "none"}\""));
             try
             {
                 if (!polyline.HasExtensionDictionary)
@@ -772,8 +761,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateTable(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var position = JsonUtils.RequireObject(args, "position");
             var rowCount = JsonUtils.RequireInt(args, "rowCount");
@@ -784,11 +774,8 @@ namespace Topomatic.ToolBridge.Tools
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание таблицы \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание таблицы \"{name}\""));
             try
             {
                 var table = new DwgTable(drawing.TableStyles.Standard, rowCount, 1, columnCount, 1);
@@ -886,8 +873,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateTable(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -901,11 +889,8 @@ namespace Topomatic.ToolBridge.Tools
             var (table, currentName) = DwgUtils.FindEntity<DwgTable>(drawing, sessionStorage, guid);
             if (table == null)
                 throw new PreconditionFailedException($"Не удалось найти таблицу по указанному guid \"{guidStr}\".");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление таблицы \"{name ?? currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление таблицы \"{name ?? currentName ?? "none"}\""));
             try
             {
                 if (!table.HasExtensionDictionary)
@@ -1041,8 +1026,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateMText(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var text = JsonUtils.RequireString(args, "text");
             var position = JsonUtils.RequireObject(args, "position");
@@ -1058,11 +1044,8 @@ namespace Topomatic.ToolBridge.Tools
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание многострочного текста \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание многострочного текста \"{name}\""));
             try
             {
                 var mText = new DwgMText
@@ -1136,7 +1119,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateMText(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1148,15 +1132,12 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var (mText, currentName) = DwgUtils.FindEntity<DwgMText>(drawing, sessionStorage, guid);
             if (mText == null)
                 throw new PreconditionFailedException($"Не удалось найти многострочный текст по указанному guid \"{guidStr}\".");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление многострочного текста \"{name ?? currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление многострочного текста \"{name ?? currentName ?? "none"}\""));
             try
             {
                 if (!mText.HasExtensionDictionary)
@@ -1254,8 +1235,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateText(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var text = JsonUtils.RequireString(args, "text");
             var position = JsonUtils.RequireObject(args, "position");
@@ -1272,11 +1254,8 @@ namespace Topomatic.ToolBridge.Tools
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание текста \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание текста \"{name}\""));
             try
             {
                 var dwgText = new DwgText
@@ -1366,7 +1345,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateText(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1379,15 +1359,12 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var (dwgText, currentName) = DwgUtils.FindEntity<DwgText>(drawing, sessionStorage, guid);
             if (dwgText == null)
                 throw new PreconditionFailedException($"Не удалось найти текст по указанному guid \"{guidStr}\".");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление текста \"{name ?? currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление текста \"{name ?? currentName ?? "none"}\""));
             try
             {
                 if (!dwgText.HasExtensionDictionary)
@@ -1474,8 +1451,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateCircle(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var center = JsonUtils.RequireObject(args, "center");
             var centerX = JsonUtils.RequireDouble(center, "x");
@@ -1488,11 +1466,8 @@ namespace Topomatic.ToolBridge.Tools
                 throw new BadRequestException("Радиус окружности (radius) должен быть больше 0.");
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание окружности \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание окружности \"{name}\""));
             try
             {
                 var circle = new DwgCircle
@@ -1555,7 +1530,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateCircle(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1564,15 +1540,12 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var (circle, currentName) = DwgUtils.FindEntity<DwgCircle>(drawing, sessionStorage, guid);
             if (circle == null)
                 throw new PreconditionFailedException($"Не удалось найти окружность по указанному guid \"{guidStr}\".");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление окружности \"{name ?? currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление окружности \"{name ?? currentName ?? "none"}\""));
             try
             {
                 if (!circle.HasExtensionDictionary)
@@ -1656,8 +1629,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateLine(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var startPoint = JsonUtils.RequireObject(args, "startPoint");
             var startX = JsonUtils.RequireDouble(startPoint, "x");
@@ -1670,11 +1644,8 @@ namespace Topomatic.ToolBridge.Tools
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание линии \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание линии \"{name}\""));
             try
             {
                 var line = new DwgLine
@@ -1746,7 +1717,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateLine(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1755,15 +1727,12 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var (line, currentName) = DwgUtils.FindEntity<DwgLine>(drawing, sessionStorage, guid);
             if (line == null)
                 throw new PreconditionFailedException($"Не удалось найти линию по указанному guid \"{guidStr}\".");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление линии \"{name ?? currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление линии \"{name ?? currentName ?? "none"}\""));
             try
             {
                 if (!line.HasExtensionDictionary)
@@ -1865,8 +1834,9 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateHatch(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var contours = JsonUtils.RequireArray(args, "contours");
             var patternName = JsonUtils.GetString(args, "patternName", "SOLID");
@@ -1879,11 +1849,8 @@ namespace Topomatic.ToolBridge.Tools
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
             var guid = Guid.NewGuid();
             var guidStr = guid.ToString();
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Создание штриховки \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Создание штриховки \"{name}\""));
             try
             {
                 var hatch = new DwgHatch();
@@ -1983,7 +1950,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateHatch(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1996,15 +1964,12 @@ namespace Topomatic.ToolBridge.Tools
             var layerName = JsonUtils.GetString(args, "layerName", null);
             var colorMode = JsonUtils.GetString(args, "colorMode", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var (hatch, currentName) = DwgUtils.FindEntity<DwgHatch>(drawing, sessionStorage, guid);
             if (hatch == null)
                 throw new PreconditionFailedException($"Не удалось найти штриховку по указанному guid \"{guidStr}\".");
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Обновление штриховки \"{name ?? currentName ?? "none"}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Обновление штриховки \"{name ?? currentName ?? "none"}\""));
             try
             {
                 if (!hatch.HasExtensionDictionary)
@@ -2156,19 +2121,17 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveActiveSpaceEntity(Dictionary<string, object> args)
         {
-            var drawing = DwgUtils.RequireDrawing(CadView);
-            var sessionStorage = DwgUtils.RequireSessionStorage(SessionStorage);
+            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
+            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var (entity, name) = DwgUtils.FindEntity<DwgEntity>(drawing, sessionStorage, guid);
             if (entity == null)
                 throw new PreconditionFailedException($"Не удалось найти элемент по указанному guid \"{guidStr}\".");
             name = name ?? "none";
-            var logger = Logger;
-            if (logger != null)
-                drawing.BeginUpdate(logger.CreateLogString($"Удаление элемента \"{name}\""));
-            else
-                drawing.BeginUpdate();
+            var logger = Container.GetSingleton<IToolBridgeLogger>();
+            drawing.BeginUpdate(logger.CreateLogString($"Удаление элемента \"{name}\""));
             try
             {
                 if (!drawing.ActiveSpace.Entities.Remove(entity))

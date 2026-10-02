@@ -84,7 +84,8 @@ Write-Host 'Нажмите Enter, чтобы закрыть окно.'
                 }
             }
             Write(ConsoleColor.Green, $"✓ Пройдено: {results.Passed}");
-            Write(ConsoleColor.Red, $"✗ Не пройдено: {results.Failed}");
+            if (results.Failed != 0)
+                Write(ConsoleColor.Red, $"✗ Не пройдено: {results.Failed}");
             if (results.Skipped != 0)
                 Write(ConsoleColor.Yellow, $"! Не выполнено: {results.Skipped}");
             Write(ConsoleColor.Gray, string.Empty);

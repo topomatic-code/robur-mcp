@@ -15,7 +15,7 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
         [cmd("tool_bridge_tests_api_check_v0.1.0_tools")]
         private void RegisterTools(object[] args)
         {
-            LegacyToolProvider.Register(args);
+            ProbeToolProvider.Register(args);
         }
     }
 }

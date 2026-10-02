@@ -9,8 +9,12 @@ using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.Cad.View;
 using Topomatic.ToolBridge.Dialogs;
 using Topomatic.ToolBridge.Dialogs.Wrappers;
+using Topomatic.ToolBridge.Infrastructure;
+using Topomatic.ToolBridge.Infrastructure.Implementation;
 using Topomatic.ToolBridge.Services;
+using Topomatic.ToolBridge.Services.Implementation;
 using Topomatic.ToolBridge.Settings;
+using Topomatic.ToolBridge.Settings.Implementation;
 using Topomatic.ToolBridge.Tools;
 
 namespace Topomatic.ToolBridge
@@ -20,41 +24,26 @@ namespace Topomatic.ToolBridge
     {
         private const string SystemLogDirectoryPathTemplate = @"%UserAppDataPath%\Support\robur-mcp\logs";
 
-        [cmd("tool_bridge_project_opened")]
-        private void ProjectOpened()
-        {
-            if (!McpServerBootstrap.Instance.ServerRunning && McpSettings.AutoRun)
-                McpRun();
-        }
+        public DependencyInjection.IContainer Container { get; private set; }
 
-        [cmd("tool_bridge_project_closed")]
-        private void ProjectClosed()
+        public override void Initialize(PluginFactory factory)
         {
-            ObjectStorage.Instance.Clear();
-        }
+            base.Initialize(factory);
 
-        [cmd("tool_bridge_log")]
-        private void EnableSystemLogging()
-        {
-            try
-            {
-                var expandedDirectoryPath = ProcessEnvironment.Current.ExpandEnvironmentVariables(SystemLogDirectoryPathTemplate);
-                var directoryPath = Path.GetFullPath(expandedDirectoryPath);
-                ToolBridgeLogger.Instance.EnableSystemLogging(directoryPath);
-                ToolBridgeLogger.Instance.PublicInfo("System logging enabled. Log directory: " + directoryPath);
-            }
-            catch (Exception ex)
-            {
-                ToolBridgeLogger.Instance.PublicError("Failed to enable the Tool Bridge system log: " + ex.Message);
-            }
-        }
+            var container = new DependencyInjection.Container();
+            container.RegisterSingleton<DependencyInjection.IContainer>(c => container);
+            container.RegisterSingleton<IObjectStorage, ObjectStorage>();
+            container.RegisterSingleton<IProjectManager, ProjectManager>();
+            container.RegisterSingleton<IMcpServerBootstrap, McpServerBootstrap>();
+            container.RegisterSingleton<IToolBridgeBootstrap, ToolBridgeBootstrap>();
+            container.RegisterSingleton<IToolCollector, ToolCollector>();
+            container.RegisterSingleton<IToolManager, ToolManager>();
+            container.RegisterSingleton<IToolConfigLoader, ToolConfigLoader>();
+            container.RegisterSingleton<IToolSettings, ToolSettings>();
+            container.RegisterSingleton<IMcpSettings, McpSettings>();
 
-        [cmd("tool_bridge_init")]
-        private void ToolBridgeInit()
-        {
-            ToolBridgeBootstrap.Instance.Initialize(() =>
-            {
-                return (CadView)ApplicationHost.Current.MainForm.Invoke((Func<CadView>)(() =>
+            container.RegisterSingleton<ICadViewProvider>(c => new CadViewProvider(() =>
+                (CadView)ApplicationHost.Current.MainForm.Invoke((Func<CadView>)(() =>
                 {
                     var cadView = CadView;
                     if (cadView == null)
@@ -75,26 +64,104 @@ namespace Topomatic.ToolBridge
                         }
                     }
                     return cadView;
-                }));
-            });
+                }))));
+
+#pragma warning disable CS0618 // Type or member is obsolete
+            container.RegisterSingleton<IToolBridgeLogger>(c => ToolBridgeLogger.Instance);
+#pragma warning restore CS0618 // Type or member is obsolete
+
+            container.RegisterType<IToolBridgePipeServer, ToolBridgePipeServer>();
+
+            Container = container;
+        }
+
+        [cmd("tool_bridge_project_opened")]
+        private void ProjectOpened()
+        {
+            var container = Container;
+            if (container == null)
+                return;
+
+            var mcpServerBootstrap = container.GetSingleton<IMcpServerBootstrap>();
+            var mcpSettings = container.GetSingleton<IMcpSettings>();
+            if (!mcpServerBootstrap.ServerRunning && mcpSettings.AutoRun)
+                McpRun();
+        }
+
+        [cmd("tool_bridge_project_closed")]
+        private void ProjectClosed()
+        {
+            var container = Container;
+            if (container == null)
+                return;
+
+            var sessionStorage = container.GetSingleton<IObjectStorage>();
+            sessionStorage.Clear();
+        }
+
+        [cmd("tool_bridge_log")]
+        private void EnableSystemLogging()
+        {
+            var container = Container;
+            if (container == null)
+                return;
+
+            var logger = container.GetSingleton<IToolBridgeLogger>();
+            try
+            {
+                var expandedDirectoryPath = ProcessEnvironment.Current.ExpandEnvironmentVariables(SystemLogDirectoryPathTemplate);
+                var directoryPath = Path.GetFullPath(expandedDirectoryPath);
+                logger.EnableSystemLogging(directoryPath);
+                logger.PublicInfo("System logging enabled. Log directory: " + directoryPath);
+            }
+            catch (Exception ex)
+            {
+                logger.PublicError("Failed to enable the Tool Bridge system log: " + ex.Message);
+            }
+        }
+
+        [cmd("tool_bridge_init")]
+        private void ToolBridgeInit()
+        {
+            var container = Container;
+            if (container == null)
+                return;
+
+            var toolBridgeBootstrap = container.GetSingleton<IToolBridgeBootstrap>();
+            toolBridgeBootstrap.Initialize();
         }
 
         [cmd("tool_bridge_shutdown")]
         private void ToolBridgeShutdown()
         {
-            ToolBridgeBootstrap.Instance.Shutdown();
+            var container = Container;
+            if (container == null)
+                return;
+
+            var toolBridgeBootstrap = container.GetSingleton<IToolBridgeBootstrap>();
+            toolBridgeBootstrap.Shutdown();
         }
 
         [cmd("mcp_server_run")]
         private void McpServerRun()
         {
-            McpServerBootstrap.Instance.Run();
+            var container = Container;
+            if (container == null)
+                return;
+
+            var mcpServerBootstrap = container.GetSingleton<IMcpServerBootstrap>();
+            mcpServerBootstrap.Run();
         }
 
         [cmd("mcp_server_shutdown")]
         private void McpServerShutdown()
         {
-            McpServerBootstrap.Instance.Shutdown();
+            var container = Container;
+            if (container == null)
+                return;
+
+            var mcpServerBootstrap = container.GetSingleton<IMcpServerBootstrap>();
+            mcpServerBootstrap.Shutdown();
         }
 
         [cmd("mcp_run")]
@@ -107,23 +174,31 @@ namespace Topomatic.ToolBridge
         [cmd("mcp_control_panel")]
         private void McpControlPanel()
         {
-            var runMcp = McpServerBootstrap.Instance.ServerRunning;
-            var settings = new McpSettingsWrapper(runMcp);
+            var container = Container;
+            if (container == null)
+                return;
+
+            var toolBridgeBootstrap = container.GetSingleton<IToolBridgeBootstrap>();
+            var mcpServerBootsrap = container.GetSingleton<IMcpServerBootstrap>();
+            var mcpSettings = container.GetSingleton<IMcpSettings>();
+
+            var runMcp = mcpServerBootsrap.ServerRunning;
+            var settings = new McpSettingsWrapper(mcpSettings, runMcp);
             if (McpControlPanelDlg.Execute(settings, ref runMcp))
             {
                 settings.SaveChanges();
                 if (runMcp)
                 {
-                    if (!ToolBridgeBootstrap.Instance.ServerRunning)
+                    if (!toolBridgeBootstrap.ServerRunning)
                         ToolBridgeInit();
-                    if (!McpServerBootstrap.Instance.ServerRunning)
+                    if (!mcpServerBootsrap.ServerRunning)
                         McpServerRun();
                 }
                 else
                 {
-                    if (McpServerBootstrap.Instance.ServerRunning)
+                    if (mcpServerBootsrap.ServerRunning)
                         McpServerShutdown();
-                    if (ToolBridgeBootstrap.Instance.ServerRunning)
+                    if (toolBridgeBootstrap.ServerRunning)
                         ToolBridgeShutdown();
                 }
             }
@@ -132,7 +207,11 @@ namespace Topomatic.ToolBridge
         [cmd("mcp_tool_settings")]
         private void ToolSettings()
         {
-            var toolSettings = new ToolSettingsWrapper();
+            var container = Container;
+            if (container == null)
+                return;
+
+            var toolSettings = new ToolSettingsWrapper(container.GetSingleton<IToolSettings>());
             if (ToolSettingsDlg.Execute(toolSettings))
                 toolSettings.SaveChanges();
         }

@@ -12,6 +12,8 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\tool_bridge\Signature.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -34,7 +36,7 @@
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Topomatic.ApplicationPlatform">
-      <HintPath>references\Topomatic.ApplicationPlatform.dll</HintPath>
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.ApplicationPlatform.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>

@@ -22,7 +22,7 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetActiveProject(Dictionary<string, object> args)
         {
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
             var projectRoot = projectManager.GetProjectTree() ??
                 throw new PreconditionFailedException("Не удалось получить активный проект.");
             return new
@@ -72,7 +72,7 @@ namespace Topomatic.ToolBridge.Tools
             if (string.IsNullOrWhiteSpace(uriStr))
                 throw new BadRequestException("URI элемента проекта не может быть пустым.");
             var uri = new URI(uriStr);
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
             if (projectManager.GetNode(uri) == null)
                 throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
             var deletedNode = projectManager.RemoveNode(uri) ??
@@ -122,7 +122,7 @@ namespace Topomatic.ToolBridge.Tools
             if (string.IsNullOrWhiteSpace(newName))
                 throw new BadRequestException("Новое имя элемента проекта не может быть пустым.");
             var uri = new URI(uriStr);
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
             if (projectManager.GetNode(uri) == null)
                 throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
             var movedNode = projectManager.MoveRenameNode(uri, newName) ??
@@ -166,7 +166,7 @@ namespace Topomatic.ToolBridge.Tools
                 throw new BadRequestException("Направление перемещения должно иметь значение up или down.");
 
             var uri = new URI(uriStr);
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
             if (projectManager.GetNode(uri) == null)
                 throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
             var reorderedNode = projectManager.ReorderNode(uri, direction == "up") ??
@@ -208,9 +208,10 @@ namespace Topomatic.ToolBridge.Tools
             var folderName = JsonUtils.RequireString(args, "folderName");
             if (string.IsNullOrWhiteSpace(folderName))
                 throw new BadRequestException("Название папки не может быть пустым.");
-            if (ProjectManager.Instance.GetNode(parentUri) == null)
+            var projectManager = Container.GetSingleton<IProjectManager>();
+            if (projectManager.GetNode(parentUri) == null)
                 throw new PreconditionFailedException($"Не удалось найти родительский элемент проекта по указанному uri {parentUriStr}.");
-            var folderNode = ProjectManager.Instance.CreateFolder(parentUri, folderName) ??
+            var folderNode = projectManager.CreateFolder(parentUri, folderName) ??
                 throw new ToolExecutionFailedException("Не удалось создать папку.");
             return new
             {
@@ -252,7 +253,7 @@ namespace Topomatic.ToolBridge.Tools
                 throw new BadRequestException("URI элемента проекта не может быть пустым.");
 
             var uri = new URI(uriStr);
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
             var node = projectManager.ActivateModel(uri) ??
                 throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}."); ;
 
@@ -279,7 +280,7 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetActiveWindows(Dictionary<string, object> args)
         {
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
             var windows = projectManager.GetActiveWindows();
 
             return new
@@ -317,7 +318,7 @@ namespace Topomatic.ToolBridge.Tools
             if (string.IsNullOrWhiteSpace(uid))
                 throw new BadRequestException("UID окна (вкладки) не может быть пустым.");
 
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
 
             var closedWindow = projectManager.CloseWindow(uid) ??
                 throw new BadRequestException($"Активная модель не содержит окно (вкладку) с переданным UID: {uid}.");
@@ -353,7 +354,7 @@ namespace Topomatic.ToolBridge.Tools
             if (string.IsNullOrWhiteSpace(uid))
                 throw new BadRequestException("UID окна (вкладки) не может быть пустым.");
 
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
 
             var activatedWindow = projectManager.ActivateWindow(uid) ??
                 throw new BadRequestException($"Активная модель не содержит окно (вкладку) с переданным UID: {uid}.");
@@ -389,7 +390,7 @@ namespace Topomatic.ToolBridge.Tools
             if (string.IsNullOrWhiteSpace(windowName))
                 throw new BadRequestException("Название окна (вкладки) не может быть пустым.");
 
-            var projectManager = ProjectManager.Instance;
+            var projectManager = Container.GetSingleton<IProjectManager>();
             var window = projectManager.AddQuickDrawing(windowName) ??
                 throw new PreconditionFailedException("Не удалось создать быстрый чертеж.");
 
