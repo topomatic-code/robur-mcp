@@ -6,6 +6,7 @@ using Topomatic.Cad.Foundation;
 using Topomatic.Cad.View;
 using Topomatic.Dwg;
 using Topomatic.Dwg.Entities;
+using Topomatic.Dwg.Layer;
 using Topomatic.Landscaping;
 using Topomatic.Tables;
 using Topomatic.ToolBridge.Exceptions;
@@ -25,12 +26,6 @@ namespace Topomatic.ToolBridge
             return cadView ??
                 throw new PreconditionFailedException("Не удалось найти активный видовой экран.");
         }
-
-        /*public static Drawing RequireDrawing(CadView cadView)
-        {
-            return GetDrawing(cadView) ??
-                throw new PreconditionFailedException("Не удалось получить активный чертеж.");
-        }*/
 
         public static IObjectStorage RequireSessionStorage(IObjectStorage sessionStorage)
         {
@@ -57,15 +52,18 @@ namespace Topomatic.ToolBridge
                 throw new PreconditionFailedException($"Не удалось найти Tlc-модель по указанному guid \"{guid}\".");
         }
 
-        /*public static Drawing GetDrawing(CadView cadView)
+        [Obsolete("Данный способ получения актичного чертежа устарел. Используйте экземпляр сервиса IDrawingProvider через внедрение зависимостей.")]
+        public static Drawing GetDrawing(CadView cadView)
         {
             if (cadView == null)
                 return null;
+
             var layer = DrawingLayer.GetDrawingLayer(cadView);
             if (layer == null)
                 return null;
+
             return layer.Drawing;
-        }*/
+        }
 
         public static (T entity, string name) FindEntity<T>(Drawing drawing, ObjectStorage sessionStorage, Guid guid) where T : DwgEntity =>
             FindEntity<T>(drawing, sessionStorage, guid);

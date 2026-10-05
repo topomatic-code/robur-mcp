@@ -28,7 +28,6 @@ namespace ToolBridge.Tests.ApiCheck_v0_1_0
             container.RegisterSingleton<ICadViewProvider>(() => new LocalViewProvider(view));
             container.RegisterType<IToolManager, ToolManager>();
             var manager = container.CreateInstance<IToolManager>();
-            manager.Initialize();
             return manager;
         }
 
