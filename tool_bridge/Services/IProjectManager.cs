@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Topomatic.FoundationClasses;
 using Topomatic.ToolBridge.Services.Models;
 
 namespace Topomatic.ToolBridge.Services
@@ -8,14 +7,14 @@ namespace Topomatic.ToolBridge.Services
     internal interface IProjectManager
     {
         ProjectNode GetProjectTree();
-        ProjectNode GetNode(URI nodeUri);
-        bool ContainsNode(URI nodeUri);
+        ProjectNode GetNode(string pathId);
+        bool ContainsNode(string pathId);
         List<ProjectNode> FindNodes(Predicate<ProjectNode> predicate);
-        ProjectNode RemoveNode(URI nodeUri);
-        ProjectNode MoveRenameNode(URI nodeUri, string newName);
-        ProjectNode ReorderNode(URI nodeUri, bool upDirection);
-        ProjectNode CreateFolder(URI parentUri, string folderName);
-        ProjectNode ActivateModel(URI nodeUri);
+        ProjectNode RemoveNode(string pathId);
+        ProjectNode MoveRenameNode(string pathId, string newName);
+        ProjectNode ReorderNode(string pathId, bool upDirection);
+        ProjectNode CreateFolder(string parentPathId, string folderName);
+        ProjectNode ActivateModel(string pathId);
         List<WindowInfo> GetActiveWindows();
         WindowInfo CloseWindow(string uid);
         WindowInfo ActivateWindow(string uid);

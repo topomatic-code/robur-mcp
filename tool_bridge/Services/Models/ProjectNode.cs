@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using Topomatic.ApplicationPlatform.Core;
-using Topomatic.FoundationClasses;
 
 namespace Topomatic.ToolBridge.Services.Models
 {
@@ -12,8 +11,8 @@ namespace Topomatic.ToolBridge.Services.Models
         }
 
         public string Name { get; set; }
-        public URI Uri { get; set; }
-        public string RelativePath { get; set; }
+        public string PathSegment { get; set; }
+        public string PathId { get; set; }
         public string Type { get; set; }
         public string TypeDescription { get; set; }
         public IProjectModel Model { get; set; }

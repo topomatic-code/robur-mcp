@@ -4,7 +4,6 @@ using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.Culverts;
 using Topomatic.Culverts.Sheets;
 using Topomatic.Culverts.Specifications;
-using Topomatic.FoundationClasses;
 using Topomatic.Tables.Sheets;
 using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services;
@@ -20,17 +19,17 @@ namespace Topomatic.ToolBridge.Tools
             InputSchema = @"{
               'type': 'object',
               'properties': {
-                'uri': { 'type': 'string', 'description': 'Полный глобальный uri модели водопропускной трубы (из структуры активного проекта).' }
+                'pathId': { 'type': 'string', 'description': 'PathId модели водопропускной трубы (из project_get_active).' }
               },
-              'required': ['uri'],
+              'required': ['pathId'],
               'additionalProperties': false
             }",
             ReadOnlyHint = true
         )]
         public object GetParameters(Dictionary<string, object> args)
         {
-            var uriStr = JsonUtils.RequireString(args, "uri");
-            var (culvertName, culvert) = GetCulvert(uriStr);
+            var pathId = JsonUtils.RequireString(args, "pathId");
+            var (culvertName, culvert) = GetCulvert(pathId);
             var sheetContext = culvert.SheetContext;
             var variables = new Dictionary<string, List<VariableInfo>>();
             var tables = new List<string>();
@@ -45,6 +44,7 @@ namespace Topomatic.ToolBridge.Tools
                 }
                 tableVariables.Add(variable);
             }
+
             var parameterGroups = new List<object>();
             for (int i = 0; i < tables.Count; i++)
             {
@@ -59,6 +59,7 @@ namespace Topomatic.ToolBridge.Tools
                 }
                 parameterGroups.Add(new { groupName = tableId, parameters = parameters.ToArray() });
             }
+
             return new
             {
                 result = new
@@ -78,17 +79,17 @@ namespace Topomatic.ToolBridge.Tools
             InputSchema = @"{
               'type': 'object',
               'properties': {
-                'uri': { 'type': 'string', 'description': 'Полный глобальный uri модели водопропускной трубы (из структуры активного проекта).' }
+                'pathId': { 'type': 'string', 'description': 'PathId модели водопропускной трубы (из project_get_active).' }
               },
-              'required': ['uri'],
+              'required': ['pathId'],
               'additionalProperties': false
             }",
             ReadOnlyHint = true
         )]
         public object GetVolumes(Dictionary<string, object> args)
         {
-            var uriStr = JsonUtils.RequireString(args, "uri");
-            var (culvertName, culvert) = GetCulvert(uriStr);
+            var pathId = JsonUtils.RequireString(args, "pathId");
+            var (culvertName, culvert) = GetCulvert(pathId);
             var sheetContext = culvert.SheetContext;
             var tableObjects = new List<object>();
             if (sheetContext.UseVolumesTable)
@@ -117,17 +118,17 @@ namespace Topomatic.ToolBridge.Tools
             InputSchema = @"{
               'type': 'object',
               'properties': {
-                'uri': { 'type': 'string', 'description': 'Полный глобальный uri модели водопропускной трубы (из структуры активного проекта).' }
+                'pathId': { 'type': 'string', 'description': 'PathId модели водопропускной трубы (из project_get_active).' }
               },
-              'required': ['uri'],
+              'required': ['pathId'],
               'additionalProperties': false
             }",
             ReadOnlyHint = true
         )]
         public object GetSpecification(Dictionary<string, object> args)
         {
-            var uriStr = JsonUtils.RequireString(args, "uri");
-            var (culvertName, culvert) = GetCulvert(uriStr);
+            var pathId = JsonUtils.RequireString(args, "pathId");
+            var (culvertName, culvert) = GetCulvert(pathId);
             var sheetContext = culvert.SheetContext;
             var tableObjects = new List<object>();
             if (sheetContext.UseCustomSpecs)
@@ -168,21 +169,25 @@ namespace Topomatic.ToolBridge.Tools
             };
         }
 
-        private (string name, Culvert culvert) GetCulvert(string uriValue)
+        private (string name, Culvert culvert) GetCulvert(string pathId)
         {
-            if (string.IsNullOrWhiteSpace(uriValue))
-                throw new BadRequestException("URI водопропускной трубы не может быть пустым.");
+            if (string.IsNullOrWhiteSpace(pathId))
+                throw new BadRequestException("PathId водопропускной трубы не может быть пустым.");
 
-            var uri = new URI(uriValue);
             var projectManager = Container.GetSingleton<IProjectManager>();
-            var culvertNode = projectManager.GetNode(uri) ??
-                throw new PreconditionFailedException($"Не удалось найти водопропускную трубу в структуре проекта по указанному uri {uriValue}.");
+
+            var culvertNode = projectManager.GetNode(pathId) ??
+                throw new PreconditionFailedException($"Не удалось найти водопропускную трубу в структуре проекта по указанному PathId {pathId}.");
+
             var culvertModel = culvertNode.Model ??
                 throw new PreconditionFailedException("Модель водопропускной трубы недоступна.");
+
             var culvertContainer = PluginCoreOps.LockReadContainer<ICulvertContainer>(culvertModel) ??
                 throw new PreconditionFailedException("Элемент проекта не является водопропускной трубой или его модель недоступна.");
+
             var culvert = culvertContainer.Culvert ??
                 throw new PreconditionFailedException("Данные водопропускной трубы недоступны.");
+
             return (culvertNode.Name, culvert);
         }
 
@@ -195,12 +200,14 @@ namespace Topomatic.ToolBridge.Tools
                 var tags = new List<string>();
                 var descriptions = new List<string>();
                 var tagValues = new List<List<string>>();
+
                 foreach (var tag in firstRow.GetContextsTags())
                 {
                     tags.Add(tag.m_Tag);
                     descriptions.Add(tag.m_Description);
                     tagValues.Add(new List<string>());
                 }
+
                 for (int i = 0; i < dataset.Count; i++)
                 {
                     var rowData = dataset[i];
@@ -212,6 +219,7 @@ namespace Topomatic.ToolBridge.Tools
                         tagValues[j].Add(value);
                     }
                 }
+
                 for (int i = 0; i < tags.Count; i++)
                 {
                     columns.Add(

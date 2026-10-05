@@ -16,6 +16,8 @@ namespace Topomatic.ToolBridge.Infrastructure.Implementation
         private readonly ICadViewProvider m_CadViewProvider;
         private readonly List<Tool> m_Tools;
 
+        private bool m_Initialized;
+
         public ToolManager([Singleton] IContainer container)
         {
             m_Container = container;
@@ -26,16 +28,26 @@ namespace Topomatic.ToolBridge.Infrastructure.Implementation
 
         public CadView CadView => m_CadViewProvider.CadView;
 
-        public void Initialize()
+        private void Initialize()
         {
             m_Tools.Clear();
             m_Tools.AddRange(m_ToolCollector.Tools);
+            m_Initialized = true;
         }
 
-        public IList<ToolDefinition> GetTools() => m_Tools.Select(t => t.Definition).ToList();
+        public IList<ToolDefinition> GetTools()
+        {
+            if (!m_Initialized)
+                Initialize();
+
+            return m_Tools.Select(t => t.Definition).ToList();
+        }
 
         public object CallTool(Dictionary<string, object> parameters)
         {
+            if (!m_Initialized)
+                Initialize();
+
             if (parameters == null)
                 throw new BadRequestException("params is required");
 

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -37,16 +36,11 @@ namespace Topomatic.ToolBridge.Services.Implementation
             if (project == null || projectModel == null)
                 throw new InvalidOperationException("Не удалось получить активный проект.");
 
-            var projectName = appHost.Plugins.Execute("getname", new object[] { projectModel }) as string;
-
-            if (string.IsNullOrEmpty(projectName))
-                throw new InvalidOperationException("Не удалось определить имя проекта");
-
             var root = new ProjectNode()
             {
-                Name = projectName,
-                Uri = projectModel.Uri,
-                RelativePath = "",
+                Name = GetName(projectModel),
+                PathSegment = "",
+                PathId = PluginCoreOps.FindModelPathId(projectModel),
                 Type = projectModel.ModelType,
                 TypeDescription = "Проект",
                 Model = projectModel
@@ -54,34 +48,25 @@ namespace Topomatic.ToolBridge.Services.Implementation
 
             foreach (var child in projectModel.GetChilds())
             {
-                var absUri = child.Uri.AsAbsoluteUri;
-                var index = absUri.IndexOf(root.Name);
-                if (index < 0)
-                {
-                    Debug.Fail("Unexpected project item Uri");
-                    continue;
-                }
-                var path = absUri.Substring(index + root.Name.Length).TrimStart('/');
-                if (path.Length == 0)
-                {
-                    Debug.Fail("Unexpected project item Uri");
-                    continue;
-                }
-                var pathFragments = path.Split('/');
+                var pathId = PluginCoreOps.FindModelPathId(child);
+                var pathFragments = pathId.TrimStart(':').Split('/');
                 var node = root;
+
                 foreach (var fragment in pathFragments)
                 {
-                    var childNode = node.Children.FirstOrDefault(n => n.Name == fragment);
+                    var childNode = node.Children.FirstOrDefault(n => n.PathSegment == fragment);
                     if (childNode == null)
                     {
-                        childNode = new ProjectNode() { Name = fragment, Parent = node };
+                        childNode = new ProjectNode() { PathSegment = fragment, Parent = node };
                         node.Children.Add(childNode);
                     }
                     node = childNode;
                 }
-                node.Uri = child.Uri;
-                node.RelativePath = path;
+
+                node.Name = GetName(child);
+                node.PathId = pathId;
                 node.Type = child.ModelType;
+
                 switch (node.Type)
                 {
                     case ProjectNodeTypes.FOLDER:
@@ -112,6 +97,7 @@ namespace Topomatic.ToolBridge.Services.Implementation
                         node.TypeDescription = "none";
                         break;
                 }
+
                 node.Model = child;
             }
 
@@ -123,7 +109,7 @@ namespace Topomatic.ToolBridge.Services.Implementation
                 var node = stack.Pop();
                 foreach (var child in node.Children.ToList())
                 {
-                    if (child.Uri == null || string.IsNullOrEmpty(child.Type))
+                    if (child.Model == null || child.Model.Uri == null || string.IsNullOrWhiteSpace(child.Type))
                         node.Children.Remove(child);
                     else
                         stack.Push(child);
@@ -133,7 +119,10 @@ namespace Topomatic.ToolBridge.Services.Implementation
             return root;
         }
 
-        public ProjectNode GetNode(URI nodeUri)
+        private static string GetName(IProjectModel model) =>
+            ApplicationHost.Current.Plugins.Execute("getname", new object[] { model }) as string;
+
+        public ProjectNode GetNode(string pathId)
         {
             var root = GetProjectTree();
             var stack = new Stack<ProjectNode>();
@@ -142,7 +131,7 @@ namespace Topomatic.ToolBridge.Services.Implementation
             {
                 var node = stack.Pop();
 
-                if (node.Uri.Equals(nodeUri))
+                if (string.Equals(node.PathId, pathId))
                     return node;
 
                 node.Children.ForEach(child => stack.Push(child));
@@ -150,7 +139,7 @@ namespace Topomatic.ToolBridge.Services.Implementation
             return null;
         }
 
-        public bool ContainsNode(URI nodeUri) => GetNode(nodeUri) != null;
+        public bool ContainsNode(string pathId) => GetNode(pathId) != null;
 
         public List<ProjectNode> FindNodes(Predicate<ProjectNode> predicate)
         {
@@ -173,9 +162,9 @@ namespace Topomatic.ToolBridge.Services.Implementation
             return result;
         }
 
-        public ProjectNode RemoveNode(URI nodeUri)
+        public ProjectNode RemoveNode(string pathId)
         {
-            var node = GetNode(nodeUri);
+            var node = GetNode(pathId);
             if (node != null)
             {
                 var model = node.Model ?? throw new InvalidOperationException("У элемента проекта отсутствует модель.");
@@ -194,61 +183,53 @@ namespace Topomatic.ToolBridge.Services.Implementation
             return node;
         }
 
-        public ProjectNode MoveRenameNode(URI nodeUri, string newName)
+        public ProjectNode MoveRenameNode(string pathId, string newName)
         {
-            var root = GetProjectTree();
-            var node = GetNode(nodeUri);
-            if (string.IsNullOrWhiteSpace(newName) || root == null || node == null)
+            var node = GetNode(pathId);
+            if (string.IsNullOrWhiteSpace(newName) || node == null)
                 return null;
 
             if (node.Type != ProjectNodeTypes.FOLDER)
             {
-                var absUri = nodeUri.AsAbsoluteUri;
-                var extIndex = absUri.LastIndexOf('.');
-                if (extIndex == -1)
-                    throw new InvalidOperationException("Unexpected element extension.");
+                var ext = Path.GetExtension(node.PathSegment);
+                if (string.IsNullOrWhiteSpace(ext))
+                    throw new PreconditionFailedException("Не удалось определить расширение существующего файла модели.");
 
                 var newExt = Path.GetExtension(newName);
                 if (string.IsNullOrWhiteSpace(newExt))
                     throw new BadRequestException($"Неверное новое имя файла {newName}. Имена файлов следует передавать с расширением!");
 
-                var ext = absUri.Substring(extIndex);
                 if (ext != newExt)
-                    throw new BadRequestException($"Изменение расширения файла {node.Uri} недопустимо.");
+                    throw new BadRequestException($"Изменение расширения файла {node.PathId} недопустимо.");
             }
 
-            var path = node.Uri.ToString();
-            var projNameIndex = path.IndexOf(root.Name);
-            var itemPath = path.Substring(projNameIndex).Replace($"{root}/", ":");
             try
             {
-                ApplicationHost.Current.Plugins.Execute("mvitem", new object[] { itemPath, newName });
+                ApplicationHost.Current.Plugins.Execute("mvitem", new object[] { node.PathId, newName });
+
             }
             catch (MessageException e)
             {
                 throw new PreconditionFailedException(e.Message, innerException: e);
             }
 
-            return FindNodes(n => n.Name.Equals(newName.Split('/').Last())).SingleOrDefault();
+            return FindNodes(n =>
+                string.Equals(n.Model.Uri.AsAbsoluteUri, new URI(node.Model.Uri.DirectoryUri, newName).AsAbsoluteUri)
+            ).SingleOrDefault();
         }
 
-        public ProjectNode ReorderNode(URI nodeUri, bool upDirection)
+        public ProjectNode ReorderNode(string pathId, bool upDirection)
         {
-            var root = GetProjectTree();
-            var node = GetNode(nodeUri);
-            if (root == null || node == null)
+            var node = GetNode(pathId);
+            if (node == null)
                 return null;
-
-            var path = node.Uri.ToString();
-            var projNameIndex = path.IndexOf(root.Name);
-            var itemPath = path.Substring(projNameIndex).Replace($"{root}/", ":");
 
             try
             {
                 if (upDirection)
-                    ApplicationHost.Current.Plugins.Execute("coreitem_up", new object[] { itemPath });
+                    ApplicationHost.Current.Plugins.Execute("coreitem_up", new object[] { node.PathId });
                 else
-                    ApplicationHost.Current.Plugins.Execute("coreitem_down", new object[] { itemPath });
+                    ApplicationHost.Current.Plugins.Execute("coreitem_down", new object[] { node.PathId });
             }
             catch (MessageException e)
             {
@@ -258,16 +239,16 @@ namespace Topomatic.ToolBridge.Services.Implementation
             return node;
         }
 
-        public ProjectNode CreateFolder(URI parentUri, string folderName)
+        public ProjectNode CreateFolder(string parentPathId, string folderName)
         {
-            var parentNode = GetNode(parentUri) ?? throw new InvalidOperationException("Не удалось получить родительский элемент.");
+            var parentNode = GetNode(parentPathId) ?? throw new InvalidOperationException("Не удалось получить родительский элемент.");
             var parentModel = parentNode.Model ?? throw new InvalidOperationException("У родительского элемента проекта отсутствует модель.");
             var project = parentModel.Project ?? throw new InvalidOperationException("Не удалось получить проект.");
             project.BeginUpdate();
             try
             {
                 var folderModel = PluginCoreOps.CreateFolder(parentModel, folderName);
-                var folderNode = GetNode(folderModel.Uri);
+                var folderNode = GetNode(PluginCoreOps.FindModelPathId(folderModel));
                 return folderNode;
             }
             finally
@@ -276,9 +257,9 @@ namespace Topomatic.ToolBridge.Services.Implementation
             }
         }
 
-        public ProjectNode ActivateModel(URI nodeUri)
+        public ProjectNode ActivateModel(string pathId)
         {
-            var node = GetNode(nodeUri);
+            var node = GetNode(pathId);
 
             if (node != null)
             {

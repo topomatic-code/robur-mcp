@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Topomatic.FoundationClasses;
 using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services;
 using Topomatic.ToolBridge.Services.Models;
@@ -25,6 +24,7 @@ namespace Topomatic.ToolBridge.Tools
             var projectManager = Container.GetSingleton<IProjectManager>();
             var projectRoot = projectManager.GetProjectTree() ??
                 throw new PreconditionFailedException("Не удалось получить активный проект.");
+
             return new
             {
                 result = new
@@ -42,8 +42,7 @@ namespace Topomatic.ToolBridge.Tools
             return new
             {
                 name = projectNode.Name ?? "none",
-                uri = projectNode.Uri?.AsAbsoluteUri ?? "none",
-                relativePath = projectNode.RelativePath ?? "none",
+                pathId = projectNode.PathId ?? "none",
                 type = projectNode.Type ?? "none",
                 typeDescription = projectNode.TypeDescription ?? "none",
                 children = projectNode.Children.Select(n => CreateProjectElement(n)).ToArray()
@@ -57,9 +56,9 @@ namespace Topomatic.ToolBridge.Tools
             InputSchema = @"{
               'type': 'object',
               'properties': {
-                'uri': { 'type': 'string', 'description': 'Полный глобальный uri элемента проекта (из структуры активного проекта).' }
+                'pathId': { 'type': 'string', 'description': 'PathId элемента (из project_get_active).' }
               },
-              'required': ['uri'],
+              'required': ['pathId'],
               'additionalProperties': false
             }",
             ReadOnlyHint = false,
@@ -68,26 +67,20 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object DeleteProjectItem(Dictionary<string, object> args)
         {
-            var uriStr = JsonUtils.RequireString(args, "uri");
-            if (string.IsNullOrWhiteSpace(uriStr))
-                throw new BadRequestException("URI элемента проекта не может быть пустым.");
-            var uri = new URI(uriStr);
+            var pathId = JsonUtils.RequireString(args, "pathId");
+            if (string.IsNullOrWhiteSpace(pathId))
+                throw new BadRequestException("PathId элемента проекта не может быть пустым.");
+
             var projectManager = Container.GetSingleton<IProjectManager>();
-            if (projectManager.GetNode(uri) == null)
-                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
-            var deletedNode = projectManager.RemoveNode(uri) ??
+            if (projectManager.GetNode(pathId) == null)
+                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному PathId {pathId}.");
+
+            var deletedNode = projectManager.RemoveNode(pathId) ??
                 throw new ToolExecutionFailedException("Не удалось удалить элемент проекта.");
+
             return new
             {
-                result = new
-                {
-                    name = deletedNode.Name,
-                    uri = deletedNode.Uri.AsAbsoluteUri,
-                    relativePath = deletedNode.RelativePath,
-                    type = deletedNode.Type,
-                    typeDescription = deletedNode.TypeDescription,
-                    children = deletedNode.Children.Select(n => CreateProjectElement(n)).ToArray()
-                },
+                result = CreateProjectElement(deletedNode),
                 description = "Удаленный элемент.",
                 status = "Элемент проекта успешно удален."
             };
@@ -100,13 +93,13 @@ namespace Topomatic.ToolBridge.Tools
             InputSchema = @"{
               'type': 'object',
               'properties': {
-                'uri': { 'type': 'string', 'description': 'Полный глобальный uri элемента проекта (из структуры активного проекта).' },
+                'pathId': { 'type': 'string', 'description': 'PathId элемента (из project_get_active).' },
                 'newName': {
                   'type': 'string',
                   'description': 'Новое имя (путь) элемента относительно его текущего расположения. Имена файлов необходимо передавать с расширением. Примеры: Name.ext — переименовать в текущей папке; ../Name.ext — переместить на уровень выше; Inner Folder/Name.ext — переместить во вложенную папку Inner Folder.'
                 }
               },
-              'required': ['uri', 'newName'],
+              'required': ['pathId', 'newName'],
               'additionalProperties': false
             }",
             ReadOnlyHint = false,
@@ -115,18 +108,21 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object MoveRenameProjectItem(Dictionary<string, object> args)
         {
-            var uriStr = JsonUtils.RequireString(args, "uri");
-            if (string.IsNullOrWhiteSpace(uriStr))
-                throw new BadRequestException("URI элемента проекта не может быть пустым.");
+            var pathId = JsonUtils.RequireString(args, "pathId");
+            if (string.IsNullOrWhiteSpace(pathId))
+                throw new BadRequestException("PathId элемента проекта не может быть пустым.");
+
             var newName = JsonUtils.RequireString(args, "newName");
             if (string.IsNullOrWhiteSpace(newName))
                 throw new BadRequestException("Новое имя элемента проекта не может быть пустым.");
-            var uri = new URI(uriStr);
+
             var projectManager = Container.GetSingleton<IProjectManager>();
-            if (projectManager.GetNode(uri) == null)
-                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
-            var movedNode = projectManager.MoveRenameNode(uri, newName) ??
+            if (projectManager.GetNode(pathId) == null)
+                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному PathId {pathId}.");
+
+            var movedNode = projectManager.MoveRenameNode(pathId, newName) ??
                 throw new ToolExecutionFailedException("Не удалось переместить или переименовать элемент проекта.");
+
             return new
             {
                 result = CreateProjectElement(movedNode),
@@ -142,14 +138,14 @@ namespace Topomatic.ToolBridge.Tools
             InputSchema = @"{
               'type': 'object',
               'properties': {
-                'uri': { 'type': 'string', 'description': 'Полный глобальный uri элемента проекта (из структуры активного проекта).' },
+                'pathId': { 'type': 'string', 'description': 'PathId элемента (из project_get_active).' },
                 'direction': {
                   'type': 'string',
                   'enum': ['up', 'down'],
                   'description': 'Направление перемещения: up — на одну позицию вверх, down — на одну позицию вниз.'
                 }
               },
-              'required': ['uri', 'direction'],
+              'required': ['pathId', 'direction'],
               'additionalProperties': false
             }",
             ReadOnlyHint = false,
@@ -158,18 +154,19 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object ReorderProjectItem(Dictionary<string, object> args)
         {
-            var uriStr = JsonUtils.RequireString(args, "uri");
-            if (string.IsNullOrWhiteSpace(uriStr))
-                throw new BadRequestException("URI элемента проекта не может быть пустым.");
+            var pathId = JsonUtils.RequireString(args, "pathId");
+            if (string.IsNullOrWhiteSpace(pathId))
+                throw new BadRequestException("PathId элемента проекта не может быть пустым.");
+
             var direction = JsonUtils.RequireString(args, "direction");
             if (direction != "up" && direction != "down")
                 throw new BadRequestException("Направление перемещения должно иметь значение up или down.");
 
-            var uri = new URI(uriStr);
             var projectManager = Container.GetSingleton<IProjectManager>();
-            if (projectManager.GetNode(uri) == null)
-                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}.");
-            var reorderedNode = projectManager.ReorderNode(uri, direction == "up") ??
+            if (projectManager.GetNode(pathId) == null)
+                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному PathId {pathId}.");
+
+            var reorderedNode = projectManager.ReorderNode(pathId, direction == "up") ??
                 throw new ToolExecutionFailedException("Не удалось изменить порядок элемента проекта.");
 
             return new
@@ -189,10 +186,10 @@ namespace Topomatic.ToolBridge.Tools
             InputSchema = @"{
               'type': 'object',
               'properties': {
-                'parentUri': { 'type': 'string', 'description': 'Полный глобальный uri родительского элемента в проекте (из структуры активного проекта).' },
+                'parentPathId': { 'type': 'string', 'description': 'PathId родительского элемента (из project_get_active).' },
                 'folderName': { 'type': 'string', 'description': 'Название папки.' }
               },
-              'required': ['parentUri', 'folderName'],
+              'required': ['parentPathId', 'folderName'],
               'additionalProperties': false
             }",
             ReadOnlyHint = false,
@@ -201,29 +198,22 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateFolder(Dictionary<string, object> args)
         {
-            var parentUriStr = JsonUtils.RequireString(args, "parentUri");
-            if (string.IsNullOrWhiteSpace(parentUriStr))
-                throw new BadRequestException("URI родительского элемента не может быть пустым.");
-            var parentUri = new URI(parentUriStr);
+            var parentPathId = JsonUtils.RequireString(args, "parentPathId");
+
             var folderName = JsonUtils.RequireString(args, "folderName");
             if (string.IsNullOrWhiteSpace(folderName))
                 throw new BadRequestException("Название папки не может быть пустым.");
+
             var projectManager = Container.GetSingleton<IProjectManager>();
-            if (projectManager.GetNode(parentUri) == null)
-                throw new PreconditionFailedException($"Не удалось найти родительский элемент проекта по указанному uri {parentUriStr}.");
-            var folderNode = projectManager.CreateFolder(parentUri, folderName) ??
+            if (projectManager.GetNode(parentPathId) == null)
+                throw new PreconditionFailedException($"Не удалось найти родительский элемент проекта по указанному PathId {parentPathId}.");
+
+            var folderNode = projectManager.CreateFolder(parentPathId, folderName) ??
                 throw new ToolExecutionFailedException("Не удалось создать папку.");
+
             return new
             {
-                result = new
-                {
-                    name = folderNode.Name,
-                    uri = folderNode.Uri.AsAbsoluteUri,
-                    relativePath = folderNode.RelativePath,
-                    type = folderNode.Type,
-                    typeDescription = folderNode.TypeDescription,
-                    children = folderNode.Children.Select(n => CreateProjectElement(n)).ToArray()
-                },
+                result = CreateProjectElement(folderNode),
                 description = "Созданная папка.",
                 status = "Папка успешно создана."
             };
@@ -236,9 +226,9 @@ namespace Topomatic.ToolBridge.Tools
             InputSchema = @"{
               'type': 'object',
               'properties': {
-                'uri': { 'type': 'string', 'description': 'Полный глобальный uri модели проекта (из структуры активного проекта).' }
+                'pathId': { 'type': 'string', 'description': 'PathId модели (из project_get_active).' }
               },
-              'required': ['uri'],
+              'required': ['pathId'],
               'additionalProperties': false
             }",
             ReadOnlyHint = true,
@@ -247,15 +237,14 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object ActivateModel(Dictionary<string, object> args)
         {
-            var uriStr = JsonUtils.RequireString(args, "uri");
+            var pathId = JsonUtils.RequireString(args, "pathId");
 
-            if (string.IsNullOrWhiteSpace(uriStr))
-                throw new BadRequestException("URI элемента проекта не может быть пустым.");
+            if (string.IsNullOrWhiteSpace(pathId))
+                throw new BadRequestException("PathId элемента проекта не может быть пустым.");
 
-            var uri = new URI(uriStr);
             var projectManager = Container.GetSingleton<IProjectManager>();
-            var node = projectManager.ActivateModel(uri) ??
-                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному uri {uriStr}."); ;
+            var node = projectManager.ActivateModel(pathId) ??
+                throw new PreconditionFailedException($"Не удалось найти элемент проекта по указанному PathId {pathId}.");
 
             return new
             {
