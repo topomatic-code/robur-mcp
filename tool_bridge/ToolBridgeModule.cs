@@ -41,6 +41,7 @@ namespace Topomatic.ToolBridge
             container.RegisterSingleton<IToolConfigLoader, ToolConfigLoader>();
             container.RegisterSingleton<IToolSettings, ToolSettings>();
             container.RegisterSingleton<IMcpSettings, McpSettings>();
+            container.RegisterSingleton<IDrawingProvider, DrawingProvider>();
 
             container.RegisterSingleton<ICadViewProvider>(c => new CadViewProvider(() =>
                 (CadView)ApplicationHost.Current.MainForm.Invoke((Func<CadView>)(() =>

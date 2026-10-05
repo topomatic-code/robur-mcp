@@ -77,8 +77,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateTlcModel(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var scriptPath = JsonUtils.RequireString(args, "scriptPath");
@@ -223,8 +223,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateTlcModel(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
@@ -498,8 +498,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetTlcModelScript(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
@@ -565,8 +565,8 @@ namespace Topomatic.ToolBridge.Tools
             }
             else if (string.Equals(source, "Model", StringComparison.OrdinalIgnoreCase))
             {
-                var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-                var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+                var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+                var drawing = drawingProvider.GetActiveDrawing(true);
                 var sessionStorage = Container.GetSingleton<IObjectStorage>();
                 var guidStr = JsonUtils.RequireString(args, "guid");
                 var guid = DwgUtils.ParseGuid(guidStr);
@@ -637,8 +637,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateTlcModelSection(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var position = JsonUtils.RequireVector3D(args, "position");

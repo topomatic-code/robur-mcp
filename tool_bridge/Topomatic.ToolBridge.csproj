@@ -198,6 +198,8 @@
     <Compile Include="Infrastructure\ICadViewProvider.cs" />
     <Compile Include="Infrastructure\Implementation\CadViewProvider.cs" />
     <Compile Include="Infrastructure\IToolManager.cs" />
+    <Compile Include="Services\IDrawingProvider.cs" />
+    <Compile Include="Services\Implementation\DrawingProvider.cs" />
     <Compile Include="Services\IObjectStorage.cs" />
     <Compile Include="Services\IProjectManager.cs" />
     <Compile Include="Services\Models\ProjectNodeTypes.cs" />

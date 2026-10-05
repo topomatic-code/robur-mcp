@@ -297,7 +297,7 @@ namespace Topomatic.ToolBridge.Services.Implementation
                         Dynamic = window.CloseButton,
                         Window = window,
                         HasCadView = cadView != null,
-                        HasDrawing = DwgUtils.GetDrawing(cadView) != null,
+                        HasDrawing = cadView != null && DrawingLayer.GetDrawingLayer(cadView)?.Drawing != null,
                         IsQuickDwg = window.UID.StartsWith(QUICK_DWG_PREFIX)
                     }
                 );

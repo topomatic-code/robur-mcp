@@ -36,8 +36,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateBlock(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var entities = JsonUtils.RequireStringArray(args, "entities");
@@ -120,8 +120,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object InsertBlock(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var blockName = JsonUtils.RequireString(args, "blockName");
@@ -203,8 +203,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object ExplodeBlock(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
@@ -289,8 +289,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveBlock(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
                 throw new BadRequestException("Имя блока не может быть пустым.");
@@ -332,8 +332,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetBlocks(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var blocks = drawing.Blocks.Select(CreateBlockObj).ToArray();
             return new
             {

@@ -25,8 +25,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetActiveDrawingInfo(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var activeSpaceBounds = drawing.ActiveSpace.Bounds;
             return new
             {
@@ -72,8 +72,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object AddLayer(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var name = JsonUtils.RequireString(args, "name");
             var description = JsonUtils.GetString(args, "description", null);
             var colorIndex = JsonUtils.GetInt(args, "colorIndex", null);
@@ -130,8 +130,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateLayer(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var currentName = JsonUtils.RequireString(args, "currentName");
             var name = JsonUtils.GetString(args, "name", null);
             var description = JsonUtils.GetString(args, "description", null);
@@ -191,8 +191,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveLayer(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
                 throw new BadRequestException("Имя слоя не может быть пустым.");
@@ -239,8 +239,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetActiveLayer(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var name = JsonUtils.RequireString(args, "name");
             if (string.IsNullOrWhiteSpace(name))
                 throw new BadRequestException("Имя слоя не может быть пустым.");
@@ -299,8 +299,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetEntitiesLayer(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidArray = JsonUtils.RequireStringArray(args, "guids");
             var layerName = JsonUtils.RequireString(args, "layerName");
@@ -381,8 +381,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object SetEntitiesColor(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidArray = JsonUtils.RequireStringArray(args, "guids");
             var colorMode = JsonUtils.RequireString(args, "colorMode");
@@ -451,8 +451,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetEntities(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var startIndex = JsonUtils.RequireInt(args, "startIndex");
             var endIndex = JsonUtils.RequireInt(args, "endIndex");
@@ -518,8 +518,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetActiveSpaceEntity(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
@@ -570,8 +570,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreatePolyline(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var pointArray = JsonUtils.RequireArray(args, "points");
@@ -653,8 +653,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdatePolyline(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
@@ -761,8 +761,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateTable(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var position = JsonUtils.RequireObject(args, "position");
@@ -873,8 +873,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateTable(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
@@ -1026,8 +1026,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateMText(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var text = JsonUtils.RequireString(args, "text");
@@ -1119,8 +1119,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateMText(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1235,8 +1235,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateText(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var text = JsonUtils.RequireString(args, "text");
@@ -1345,8 +1345,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateText(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1451,8 +1451,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateCircle(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var center = JsonUtils.RequireObject(args, "center");
@@ -1530,8 +1530,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateCircle(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1629,8 +1629,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateLine(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var startPoint = JsonUtils.RequireObject(args, "startPoint");
@@ -1717,8 +1717,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateLine(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -1834,8 +1834,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreateHatch(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var contours = JsonUtils.RequireArray(args, "contours");
@@ -1950,8 +1950,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object UpdateHatch(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);
             var name = JsonUtils.GetString(args, "name", null);
@@ -2121,8 +2121,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object RemoveActiveSpaceEntity(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var guidStr = JsonUtils.RequireString(args, "guid");
             var guid = DwgUtils.ParseGuid(guidStr);

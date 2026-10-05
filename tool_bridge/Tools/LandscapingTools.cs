@@ -106,8 +106,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object CreatePointPlant(Dictionary<string, object> args)
         {
-            var cadViewProvider = Container.GetSingleton<ICadViewProvider>();
-            var drawing = DwgUtils.RequireDrawing(cadViewProvider.CadView);
+            var drawingProvider = Container.GetSingleton<IDrawingProvider>();
+            var drawing = drawingProvider.GetActiveDrawing(true);
             var sessionStorage = Container.GetSingleton<IObjectStorage>();
             var name = JsonUtils.RequireString(args, "name");
             var libUid = JsonUtils.RequireString(args, "libUid");

@@ -6,7 +6,6 @@ using Topomatic.Cad.Foundation;
 using Topomatic.Cad.View;
 using Topomatic.Dwg;
 using Topomatic.Dwg.Entities;
-using Topomatic.Dwg.Layer;
 using Topomatic.Landscaping;
 using Topomatic.Tables;
 using Topomatic.ToolBridge.Exceptions;
@@ -27,11 +26,11 @@ namespace Topomatic.ToolBridge
                 throw new PreconditionFailedException("Не удалось найти активный видовой экран.");
         }
 
-        public static Drawing RequireDrawing(CadView cadView)
+        /*public static Drawing RequireDrawing(CadView cadView)
         {
             return GetDrawing(cadView) ??
                 throw new PreconditionFailedException("Не удалось получить активный чертеж.");
-        }
+        }*/
 
         public static IObjectStorage RequireSessionStorage(IObjectStorage sessionStorage)
         {
@@ -58,7 +57,7 @@ namespace Topomatic.ToolBridge
                 throw new PreconditionFailedException($"Не удалось найти Tlc-модель по указанному guid \"{guid}\".");
         }
 
-        public static Drawing GetDrawing(CadView cadView)
+        /*public static Drawing GetDrawing(CadView cadView)
         {
             if (cadView == null)
                 return null;
@@ -66,7 +65,7 @@ namespace Topomatic.ToolBridge
             if (layer == null)
                 return null;
             return layer.Drawing;
-        }
+        }*/
 
         public static (T entity, string name) FindEntity<T>(Drawing drawing, ObjectStorage sessionStorage, Guid guid) where T : DwgEntity =>
             FindEntity<T>(drawing, sessionStorage, guid);
@@ -83,6 +82,7 @@ namespace Topomatic.ToolBridge
                 {
                     if (entity.Drawing != drawing)
                         throw new PreconditionFailedException($"Элемент (сущность) с guid \"{guidStr}\" не находится в активном чертеже.");
+
                     if (entity.HasExtensionDictionary)
                     {
                         var extDict = entity.GetExtensionDictionary();
@@ -619,10 +619,13 @@ namespace Topomatic.ToolBridge
         {
             if (layerName == null)
                 return;
+
             if (string.IsNullOrWhiteSpace(layerName))
                 throw new BadRequestException("Имя слоя сущности (layerName) не может быть пустым.");
+
             if (!drawing.Layers.IsExists(layerName))
                 throw new PreconditionFailedException($"Слой с именем {layerName} не содержится в активном чертеже.");
+
             entity.Layer = drawing.Layers[layerName] ?? throw new InvalidOperationException($"Не удалось получить слой с именем {layerName}.");
         }
 
@@ -630,8 +633,10 @@ namespace Topomatic.ToolBridge
         {
             if (color == CadColor.ByLayer)
                 return "ByLayer";
+
             if (color == CadColor.ByBlock)
                 return "ByBlock";
+
             return "Indexed";
         }
 
@@ -639,6 +644,7 @@ namespace Topomatic.ToolBridge
         {
             if (colorMode == null)
                 return;
+
             if (string.Equals(colorMode, "ByLayer", StringComparison.OrdinalIgnoreCase))
             {
                 entity.Color = CadColor.ByLayer;
@@ -651,8 +657,10 @@ namespace Topomatic.ToolBridge
             {
                 if (colorIndex == null)
                     throw new BadRequestException("Для режима цвета Indexed необходимо передать colorIndex.");
+
                 if (colorIndex.Value < 0)
                     throw new BadRequestException("Индекс цвета сущности (colorIndex) не может быть отрицательным.");
+
                 entity.Color = new CadColor(colorIndex.Value);
             }
             else
@@ -678,6 +686,7 @@ namespace Topomatic.ToolBridge
             if (Enum.TryParse(value, true, out AcPatternType patternType)
                 && Enum.IsDefined(typeof(AcPatternType), patternType))
                 return patternType;
+
             throw new BadRequestException(
                 $"Неизвестное значение patternType \"{value}\". Допустимые значения: {string.Join(", ", Enum.GetNames(typeof(AcPatternType)))}.");
         }
@@ -687,6 +696,7 @@ namespace Topomatic.ToolBridge
             if (Enum.TryParse(value, true, out AcHatchStyle hatchStyle)
                 && Enum.IsDefined(typeof(AcHatchStyle), hatchStyle))
                 return hatchStyle;
+
             throw new BadRequestException(
                 $"Неизвестное значение hatchStyle \"{value}\". Допустимые значения: {string.Join(", ", Enum.GetNames(typeof(AcHatchStyle)))}.");
         }
@@ -696,6 +706,7 @@ namespace Topomatic.ToolBridge
             if (Enum.TryParse(value, true, out TextAlignment alignment)
                 && Enum.IsDefined(typeof(TextAlignment), alignment))
                 return alignment;
+
             throw new BadRequestException(
                 $"Неизвестное значение justify \"{value}\". Допустимые значения: {string.Join(", ", Enum.GetNames(typeof(TextAlignment)))}.");
         }
@@ -705,6 +716,7 @@ namespace Topomatic.ToolBridge
             if (Enum.TryParse(value, true, out AttachmentPoint attachmentPoint)
                 && Enum.IsDefined(typeof(AttachmentPoint), attachmentPoint))
                 return attachmentPoint;
+
             throw new BadRequestException(
                 $"Неизвестное значение attachmentPoint \"{value}\". Допустимые значения: {string.Join(", ", Enum.GetNames(typeof(AttachmentPoint)))}.");
         }
