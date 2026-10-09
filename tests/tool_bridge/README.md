@@ -5,20 +5,20 @@
 | Проект проверок | Назначение и подробная документация |
 | --- | --- |
 | [ToolBridge.Tests.ApiCheck_v0.1.0](ToolBridge.Tests.ApiCheck_v0.1.0/README.md) | Сохранение контракта C# API 0.1.0 и интеграция провайдера с ToolBridge. |
-| [ToolBridge.Tests.DependencyInjection](ToolBridge.Tests.DependencyInjection/README.md) | Регистрация сервисов, внедрение через конструктор, синглтоны и ошибки DI-контейнера. |
+| [ToolBridge.Tests.Core](ToolBridge.Tests.Core/README.md) | DI-контейнер и инструменты AlgTools: сведения о трассе, параметры и конструкции поперечных профилей. |
 
 ## Сборка и запуск
 
 Для компиляции разместите реальные сборки Robur и его зависимостей в `robur-mcp/Out/Bin`. Все тестовые проекты берут внешние DLL из этого каталога с `Private=False`. Для полного обновления тестов пересобирайте solution вместе с текущим ToolBridge.
 
-1. Откройте `ToolBridge.Tests.sln` и соберите solution. Выходной каталог тестовых проектов — `robur-mcp/Out/Bin` (`../../Out/Bin` относительно этой папки). Зависимость проекта DI также собирает актуальную `Topomatic.ToolBridge.dll` в этот каталог.
+1. Откройте `ToolBridge.Tests.sln` и соберите solution. Выходной каталог тестовых проектов — `robur-mcp/Out/Bin` (`../../Out/Bin` относительно этой папки). Зависимость проекта Core также собирает актуальную `Topomatic.ToolBridge.dll` в этот каталог.
 2. Установите в Robur актуальную `Topomatic.ToolBridge.dll`, тестовые DLL и файлы регистрации:
 
    | Сборка | Файл регистрации |
    | --- | --- |
    | `ToolBridge.Tests.dll` | `tool_bridge_tests.plugin` |
    | `ToolBridge.Tests.ApiCheck_v0.1.0.dll` | `tool_bridge_tests_api_check_v0.1.0.plugin` |
-   | `ToolBridge.Tests.DependencyInjection.dll` | `tool_bridge_tests_dependency_injection.plugin` |
+   | `ToolBridge.Tests.Core.dll` | `tool_bridge_tests_core.plugin` |
 
 3. Выполните `run_tests` в Robur. Результаты появятся в отдельной Windows-консоли.
 

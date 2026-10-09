@@ -42,6 +42,7 @@ namespace Topomatic.ToolBridge
             container.RegisterSingleton<IToolSettings, ToolSettings>();
             container.RegisterSingleton<IMcpSettings, McpSettings>();
             container.RegisterSingleton<IDrawingProvider, DrawingProvider>();
+            container.RegisterSingleton<IAlignmentProvider, AlignmentProvider>();
 
             container.RegisterSingleton<ICadViewProvider>(c => new CadViewProvider(() =>
                 (CadView)ApplicationHost.Current.MainForm.Invoke((Func<CadView>)(() =>
@@ -231,7 +232,8 @@ namespace Topomatic.ToolBridge
                     new CulvertTools(),
                     new LandscapingTools(),
                     new SolidTools(),
-                    new TlcTools()
+                    new TlcTools(),
+                    new AlgTools()
                 }
             );
         }

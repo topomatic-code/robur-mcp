@@ -7,11 +7,13 @@
     <ProjectGuid>{78331551-E1E6-4926-B56A-E009AFC63E2B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ToolBridge.Tests.DependencyInjection</RootNamespace>
-    <AssemblyName>ToolBridge.Tests.DependencyInjection</AssemblyName>
+    <RootNamespace>ToolBridge.Tests.Core</RootNamespace>
+    <AssemblyName>ToolBridge.Tests.Core</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>..\..\..\tool_bridge\Signature.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -33,6 +35,34 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Newtonsoft.Json.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Alg">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Alg.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Alg.Road">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Alg.Road.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Crs">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Crs.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Cad.Foundation">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Cad.Foundation.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.FoundationClasses">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.FoundationClasses.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Stg">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Stg.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Topomatic.ApplicationPlatform">
       <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.ApplicationPlatform.dll</HintPath>
       <Private>False</Private>
@@ -41,10 +71,14 @@
   <ItemGroup>
     <Compile Include="PluginHost.cs" />
     <Compile Include="Module.cs" />
-    <Compile Include="ContainerTests.cs" />
+    <Compile Include="DependencyInjection\ContainerTests.cs" />
+    <Compile Include="Tools\AlgTools\AlgToolsFixture.cs" />
+    <Compile Include="Tools\AlgTools\GetAlignmentTests.cs" />
+    <Compile Include="Tools\AlgTools\GetParametersTests.cs" />
+    <Compile Include="Tools\AlgTools\GetConstructionTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="tool_bridge_tests_dependency_injection.plugin">
+    <None Include="tool_bridge_tests_core.plugin">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

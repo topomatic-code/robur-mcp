@@ -1,0 +1,10 @@
+{
+  "assemblies": {
+    "tool_bridge_tests_core": {
+      "assembly": "ToolBridge.Tests.Core.dll, ToolBridge.Tests.Core.PluginHost"
+    }
+  },
+  "broadcasts": {
+    "test_request": "tool_bridge_tests_core_register"
+  }
+}

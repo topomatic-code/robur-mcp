@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolBridge.Tests", "ToolBri
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolBridge.Tests.ApiCheck_v0.1.0", "ToolBridge.Tests.ApiCheck_v0.1.0\ToolBridge.Tests.ApiCheck_v0.1.0.csproj", "{2DC42E90-CB22-474A-926E-6635505072D9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolBridge.Tests.DependencyInjection", "ToolBridge.Tests.DependencyInjection\ToolBridge.Tests.DependencyInjection.csproj", "{78331551-E1E6-4926-B56A-E009AFC63E2B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ToolBridge.Tests.Core", "ToolBridge.Tests.Core\ToolBridge.Tests.Core.csproj", "{78331551-E1E6-4926-B56A-E009AFC63E2B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

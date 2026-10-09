@@ -1,7 +1,7 @@
 using System;
 using Topomatic.ApplicationPlatform.Plugins;
 
-namespace ToolBridge.Tests.DependencyInjection
+namespace ToolBridge.Tests.Core
 {
     internal sealed class PluginHost : PluginHostInitializator
     {

@@ -3,7 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Topomatic.ToolBridge.DependencyInjection;
 
-namespace ToolBridge.Tests.DependencyInjection
+namespace ToolBridge.Tests.Core.DependencyInjection
 {
     internal sealed class ContainerTests
     {

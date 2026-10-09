@@ -64,6 +64,16 @@
       <HintPath>$(RoburReferencesPath)\Topomatic.Acax.Import.Dxf.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Topomatic.Alg, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Alg.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Alg.Core, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Alg.Core.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Topomatic.ApplicationEnvironment, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(RoburReferencesPath)\Topomatic.ApplicationEnvironment.dll</HintPath>
@@ -94,6 +104,11 @@
       <HintPath>$(RoburReferencesPath)\Topomatic.Controls.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Topomatic.Crs, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Crs.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Topomatic.Culverts, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(RoburReferencesPath)\Topomatic.Culverts.dll</HintPath>
@@ -117,6 +132,11 @@
     <Reference Include="Topomatic.Landscaping, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(RoburReferencesPath)\Topomatic.Landscaping.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Smt, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Smt.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.Stg, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
@@ -199,6 +219,8 @@
     <Compile Include="Infrastructure\Implementation\CadViewProvider.cs" />
     <Compile Include="Infrastructure\IToolManager.cs" />
     <Compile Include="Services\IDrawingProvider.cs" />
+    <Compile Include="Services\IAlignmentProvider.cs" />
+    <Compile Include="Services\Implementation\AlignmentProvider.cs" />
     <Compile Include="Services\Implementation\DrawingProvider.cs" />
     <Compile Include="Services\IObjectStorage.cs" />
     <Compile Include="Services\IProjectManager.cs" />
@@ -212,6 +234,7 @@
     <Compile Include="Settings\ToolApprovalScope.cs" />
     <Compile Include="Settings\ToolConfig.cs" />
     <Compile Include="Settings\Implementation\ToolSettings.cs" />
+    <Compile Include="Tools\AlgTools.cs" />
     <Compile Include="Utils\ConsoleReader.cs" />
     <Compile Include="Utils\DwgUtils.cs" />
     <Compile Include="Utils\GeometryUtils.cs" />
