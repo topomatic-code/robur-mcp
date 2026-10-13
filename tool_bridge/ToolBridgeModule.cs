@@ -42,6 +42,7 @@ namespace Topomatic.ToolBridge
             container.RegisterSingleton<IToolSettings, ToolSettings>();
             container.RegisterSingleton<IMcpSettings, McpSettings>();
             container.RegisterSingleton<IDrawingProvider, DrawingProvider>();
+            container.RegisterSingleton<IHatchPatternProvider, HatchPatternProvider>();
             container.RegisterSingleton<IAlignmentProvider, AlignmentProvider>();
 
             container.RegisterSingleton<ICadViewProvider>(c => new CadViewProvider(() =>

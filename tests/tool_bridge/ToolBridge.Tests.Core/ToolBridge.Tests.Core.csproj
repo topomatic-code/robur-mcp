@@ -35,6 +35,19 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="Topomatic.Tables">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Tables.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Tables.Export">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Tables.Export.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Topomatic.Dwg">
+      <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Topomatic.Dwg.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>$(MSBuildProjectDirectory)\..\..\..\Out\Bin\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
@@ -73,6 +86,32 @@
     <Compile Include="Module.cs" />
     <Compile Include="DependencyInjection\ContainerTests.cs" />
     <Compile Include="Tools\AlgTools\AlgToolsFixture.cs" />
+    <Compile Include="Tools\DwgTools\DwgToolsFixture.cs" />
+    <Compile Include="Tools\DwgTools\CreatePolylineTests.cs" />
+    <Compile Include="Tools\DwgTools\CreateCircleTests.cs" />
+    <Compile Include="Tools\DwgTools\CreateLineTests.cs" />
+    <Compile Include="Tools\DwgTools\CreateTextTests.cs" />
+    <Compile Include="Tools\DwgTools\CreateMTextTests.cs" />
+    <Compile Include="Tools\DwgTools\CreateTableTests.cs" />
+    <Compile Include="Tools\DwgTools\CreateHatchTests.cs" />
+    <Compile Include="Tools\DwgTools\UpdatePolylineTests.cs" />
+    <Compile Include="Tools\DwgTools\UpdateCircleTests.cs" />
+    <Compile Include="Tools\DwgTools\UpdateLineTests.cs" />
+    <Compile Include="Tools\DwgTools\UpdateTextTests.cs" />
+    <Compile Include="Tools\DwgTools\UpdateMTextTests.cs" />
+    <Compile Include="Tools\DwgTools\UpdateTableTests.cs" />
+    <Compile Include="Tools\DwgTools\UpdateHatchTests.cs" />
+    <Compile Include="Tools\DwgTools\GetActiveDrawingInfoTests.cs" />
+    <Compile Include="Tools\DwgTools\AddLayerTests.cs" />
+    <Compile Include="Tools\DwgTools\UpdateLayerTests.cs" />
+    <Compile Include="Tools\DwgTools\RemoveLayerTests.cs" />
+    <Compile Include="Tools\DwgTools\SetActiveLayerTests.cs" />
+    <Compile Include="Tools\DwgTools\GetEntitiesTests.cs" />
+    <Compile Include="Tools\DwgTools\GetActiveSpaceEntityTests.cs" />
+    <Compile Include="Tools\DwgTools\RemoveActiveSpaceEntityTests.cs" />
+    <Compile Include="Tools\DwgTools\SetEntitiesLayerTests.cs" />
+    <Compile Include="Tools\DwgTools\SetEntitiesColorTests.cs" />
+    <Compile Include="Tools\DwgTools\GetHatchPatternsTests.cs" />
     <Compile Include="Tools\AlgTools\GetAlignmentTests.cs" />
     <Compile Include="Tools\AlgTools\GetParametersTests.cs" />
     <Compile Include="Tools\AlgTools\GetConstructionTests.cs" />

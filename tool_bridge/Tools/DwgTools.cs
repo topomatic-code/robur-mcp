@@ -2071,8 +2071,8 @@ namespace Topomatic.ToolBridge.Tools
         )]
         public object GetHatchPatterns(Dictionary<string, object> args)
         {
-            var patternManager = HatchPatternManager.Current ?? throw new PreconditionFailedException("Не удалось получить доступ к менеджеру штриховок.");
-            var patterns = patternManager.GetDefinedPatterns() ?? Enumerable.Empty<HatchPattern>();
+            var patternProvider = Container.GetSingleton<IHatchPatternProvider>();
+            var patterns = patternProvider.GetDefinedPatterns();
             var patternObjects = patterns
                 .Select(pattern => new
                 {
