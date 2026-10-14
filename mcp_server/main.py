@@ -380,5 +380,8 @@ if __name__ == "__main__":
         create_app(args.host, args.port),
         host=args.host,
         port=args.port,
+        # Use the bundled pure-Python parser instead of auto-detecting optional
+        # httptools, which can be incomplete in the PyInstaller executable.
+        http="h11",
         ws="none",
     )
