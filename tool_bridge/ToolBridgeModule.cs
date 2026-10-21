@@ -7,6 +7,7 @@ using Topomatic.ApplicationPlatform;
 using Topomatic.ApplicationPlatform.Core;
 using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.Cad.View;
+using Topomatic.FoundationClasses.Diagnostics;
 using Topomatic.ToolBridge.Dialogs;
 using Topomatic.ToolBridge.Dialogs.Wrappers;
 using Topomatic.ToolBridge.Infrastructure;
@@ -45,6 +46,9 @@ namespace Topomatic.ToolBridge
             container.RegisterSingleton<IHatchPatternProvider, HatchPatternProvider>();
             container.RegisterSingleton<IAlignmentProvider, AlignmentProvider>();
             container.RegisterSingleton<IGeologyProvider, GeologyProvider>();
+
+            var roburLogger = new RoburLogger(Logger.Current);
+            container.RegisterSingleton<IRoburLogger>(() => roburLogger);
 
             container.RegisterSingleton<ICadViewProvider>(c => new CadViewProvider(() =>
                 (CadView)ApplicationHost.Current.MainForm.Invoke((Func<CadView>)(() =>

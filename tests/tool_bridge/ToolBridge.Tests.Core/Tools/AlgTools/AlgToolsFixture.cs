@@ -22,6 +22,8 @@ namespace ToolBridge.Tests.Core.Tools.AlgTools
         internal string Name = "Test road";
         internal int ProviderCalls;
         internal Exception ProviderError;
+        internal int ActiveSection = -1;
+        internal bool SectionModelAvailable = true;
 
         internal AlgToolsFixture()
         {
@@ -38,6 +40,23 @@ namespace ToolBridge.Tests.Core.Tools.AlgTools
             Test.Require(pathId == PathId, "Tool must pass the supplied road PathId to the provider.");
             if (ProviderError != null) throw ProviderError;
             return (Name, Alignment);
+        }
+
+        public bool TryGetActiveSection(Alignment alg, out int activeSection)
+        {
+            Test.Require(ReferenceEquals(alg, Alignment), "Tool must use the resolved alignment.");
+            activeSection = SectionModelAvailable ? ActiveSection : -1;
+            return SectionModelAvailable;
+        }
+
+        public bool TrySetActiveSection(Alignment alg, int activeSection)
+        {
+            Test.Require(ReferenceEquals(alg, Alignment), "Tool must use the resolved alignment.");
+            if (!SectionModelAvailable) return false;
+            if (activeSection < 0 || activeSection >= Alignment.Corridor.Sections.Count)
+                throw new BadRequestException("Section index is out of range.");
+            ActiveSection = activeSection;
+            return true;
         }
 
         internal Construction AddConstruction(string name = "Construction", bool userDefined = false, params ActBaseComponent[] components)

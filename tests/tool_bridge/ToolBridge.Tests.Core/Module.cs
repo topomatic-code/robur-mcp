@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using ToolBridge.Tests.Core.DependencyInjection;
 using ToolBridge.Tests.Core.Tools.AlgTools;
 using ToolBridge.Tests.Core.Tools.DwgTools;
+using ToolBridge.Tests.Core.Tools.ProjectTools;
 using Topomatic.ApplicationPlatform.Plugins;
 
 namespace ToolBridge.Tests.Core
@@ -12,7 +13,12 @@ namespace ToolBridge.Tests.Core
         private void RegisterTests(object[] args)
         {
             ((List<object>)args[0]).Add(new ContainerTests());
+            ((List<object>)args[0]).Add(new GetMessagesTests());
             ((List<object>)args[0]).Add(new GetAlignmentTests());
+            ((List<object>)args[0]).Add(new GetActiveSectionTests());
+            ((List<object>)args[0]).Add(new SetActiveSectionTests());
+            ((List<object>)args[0]).Add(new GetSectionIndexTests());
+            ((List<object>)args[0]).Add(new GetNearestSectionIndicesTests());
             ((List<object>)args[0]).Add(new GetParametersTests());
             ((List<object>)args[0]).Add(new GetConstructionTests());
             ((List<object>)args[0]).Add(new CreatePolylineTests());

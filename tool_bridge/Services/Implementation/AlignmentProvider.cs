@@ -1,4 +1,5 @@
 using Topomatic.Alg;
+using Topomatic.Alg.Model;
 using Topomatic.ApplicationPlatform.Plugins;
 using Topomatic.ToolBridge.DependencyInjection;
 using Topomatic.ToolBridge.Exceptions;
@@ -32,6 +33,32 @@ namespace Topomatic.ToolBridge.Services.Implementation
                 throw new PreconditionFailedException("Данные трассы недоступны.");
 
             return (algNode.Name, alg);
+        }
+
+        public bool TryGetActiveSection(Alignment alg, out int activeSection)
+        {
+            activeSection = -1;
+
+            var algModel = PluginCoreOps.FindModel(alg)?.Model as AlignmentModel;
+            if (algModel == null)
+                return false;
+
+            activeSection = algModel.ActivityManager.CurrentSection;
+            return true;
+        }
+
+        public bool TrySetActiveSection(Alignment alg, int activeSection)
+        {
+            var algModel = PluginCoreOps.FindModel(alg)?.Model as AlignmentModel;
+            if (algModel == null)
+                return false;
+
+            if (activeSection < 0 || activeSection >= alg.Corridor.Sections.Count)
+                throw new BadRequestException($"Данная модель дороги не содержит поперечник с индексом {activeSection}.");
+
+            algModel.ActivityManager.CurrentSection = activeSection;
+            algModel.ActivityManager.EndSection = activeSection;
+            return true;
         }
     }
 }

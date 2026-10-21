@@ -126,6 +126,150 @@ namespace Topomatic.ToolBridge.Tools
         }
 
         [ToolDef(
+            Name = "alg_get_active_section",
+            Domain = ToolDomains.Alg,
+            Description = "Возвращает индекс активного поперечника трассы (нумерация с нуля).",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'algPathId': { 'type': 'string', 'description': 'PathId трассы (из project_get_active).' }
+              },
+              'required': ['algPathId'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object GetActiveSection(Dictionary<string, object> args)
+        {
+            var algPathId = JsonUtils.RequireString(args, "algPathId");
+            var alignmentProvider = Container.GetSingleton<IAlignmentProvider>();
+            var (algName, alg) = alignmentProvider.GetAlignment(algPathId);
+
+            if (!alignmentProvider.TryGetActiveSection(alg, out var activeSection))
+                throw new PreconditionFailedException("Модель трассы недоступна.");
+
+            return new
+            {
+                result = new { activeSection },
+                description = "Индекс активного поперечника трассы (нумерация с нуля).",
+                status = "Активный поперечник трассы успешно получен."
+            };
+        }
+
+        [ToolDef(
+            Name = "alg_set_active_section",
+            Domain = ToolDomains.Alg,
+            Description = "Выбирает активный поперечник трассы по индексу (нумерация с нуля).",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'algPathId': { 'type': 'string', 'description': 'PathId трассы (из project_get_active).' },
+                'activeSection': { 'type': 'integer', 'minimum': 0, 'description': 'Индекс поперечника от 0 до corridor.sectionsCount - 1 (из alg_get_info).' }
+              },
+              'required': ['algPathId', 'activeSection'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = false,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object SetActiveSection(Dictionary<string, object> args)
+        {
+            var algPathId = JsonUtils.RequireString(args, "algPathId");
+            var activeSection = JsonUtils.RequireInt(args, "activeSection");
+            var alignmentProvider = Container.GetSingleton<IAlignmentProvider>();
+            var (algName, alg) = alignmentProvider.GetAlignment(algPathId);
+
+            if (!alignmentProvider.TrySetActiveSection(alg, activeSection))
+                throw new PreconditionFailedException("Модель трассы недоступна.");
+
+            return new
+            {
+                result = new { activeSection },
+                description = "Индекс активного поперечника трассы (нумерация с нуля).",
+                status = "Активный поперечник трассы успешно выбран."
+            };
+        }
+
+        [ToolDef(
+            Name = "alg_get_section_index",
+            Domain = ToolDomains.Alg,
+            Description = "Возвращает индекс существующего поперечника трассы по положению вдоль трассы. Нумерация с нуля. Если поперечник не найден, возвращает ошибку.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'algPathId': { 'type': 'string', 'description': 'PathId трассы (из project_get_active).' },
+                'station': { 'type': 'number', 'description': 'Числовое положение вдоль трассы, например startStation или endStation из alg_get_construction.' }
+              },
+              'required': ['algPathId', 'station'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object GetSectionIndex(Dictionary<string, object> args)
+        {
+            var algPathId = JsonUtils.RequireString(args, "algPathId");
+            var station = JsonUtils.RequireDouble(args, "station");
+            var alignmentProvider = Container.GetSingleton<IAlignmentProvider>();
+            var (algName, alg) = alignmentProvider.GetAlignment(algPathId);
+
+            if (!alg.Corridor.Sections.IsExist(station))
+                throw new BadRequestException($"Трасса не содержит поперечник в положении {station.ToString(CultureInfo.InvariantCulture)}.");
+
+            var sectionIndex = alg.Corridor.Sections.GetIndex(station);
+
+            return new
+            {
+                result = new { sectionIndex },
+                description = "Индекс поперечника трассы (нумерация с нуля).",
+                status = "Индекс поперечника трассы успешно получен."
+            };
+        }
+
+        [ToolDef(
+            Name = "alg_get_nearest_section_indices",
+            Domain = ToolDomains.Alg,
+            Description = "Возвращает индексы поперечников, ограничивающих положение вдоль трассы (нумерация с нуля). При совпадении с поперечником prevSectionIndex указывает на него, nextSectionIndex — на следующий. В конце трассы и после него оба индекса указывают на последний поперечник. До первого поперечника или при пустом списке возвращает ошибку.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'algPathId': { 'type': 'string', 'description': 'PathId трассы (из project_get_active).' },
+                'station': { 'type': 'number', 'description': 'Числовое положение вдоль трассы; может находиться между существующими поперечниками.' }
+              },
+              'required': ['algPathId', 'station'],
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object GetNearestSectionIndices(Dictionary<string, object> args)
+        {
+            var algPathId = JsonUtils.RequireString(args, "algPathId");
+            var station = JsonUtils.RequireDouble(args, "station");
+            var alignmentProvider = Container.GetSingleton<IAlignmentProvider>();
+            var (algName, alg) = alignmentProvider.GetAlignment(algPathId);
+
+            if (!alg.Corridor.Sections.TryGetSections(station, out var prevSection, out var nextSection))
+                throw new BadRequestException($"Не удалось найти соседние поперечники для положения {station.ToString(CultureInfo.InvariantCulture)}.");
+
+            return new
+            {
+                result = new
+                {
+                    prevSectionIndex = alg.Corridor.Sections.GetIndex(prevSection.Station),
+                    nextSectionIndex = alg.Corridor.Sections.GetIndex(nextSection.Station)
+                },
+                description = "Индексы соседних поперечников трассы (нумерация с нуля).",
+                status = "Индексы соседних поперечников трассы успешно получены."
+            };
+        }
+
+        [ToolDef(
             Name = "alg_get_construction",
             Domain = ToolDomains.Alg,
             Description = "Возвращает конструкцию коридора трассы.",

@@ -84,8 +84,13 @@
   <ItemGroup>
     <Compile Include="PluginHost.cs" />
     <Compile Include="Module.cs" />
+    <Compile Include="Tools\ProjectTools\GetMessagesTests.cs" />
     <Compile Include="DependencyInjection\ContainerTests.cs" />
     <Compile Include="Tools\AlgTools\AlgToolsFixture.cs" />
+    <Compile Include="Tools\AlgTools\GetActiveSectionTests.cs" />
+    <Compile Include="Tools\AlgTools\SetActiveSectionTests.cs" />
+    <Compile Include="Tools\AlgTools\GetSectionIndexTests.cs" />
+    <Compile Include="Tools\AlgTools\GetNearestSectionIndicesTests.cs" />
     <Compile Include="Tools\DwgTools\DwgToolsFixture.cs" />
     <Compile Include="Tools\DwgTools\CreatePolylineTests.cs" />
     <Compile Include="Tools\DwgTools\CreateCircleTests.cs" />

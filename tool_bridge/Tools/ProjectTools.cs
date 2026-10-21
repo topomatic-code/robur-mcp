@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Topomatic.FoundationClasses.Diagnostics;
 using Topomatic.ToolBridge.Exceptions;
 using Topomatic.ToolBridge.Services;
 using Topomatic.ToolBridge.Services.Models;
@@ -251,6 +253,57 @@ namespace Topomatic.ToolBridge.Tools
                 result = CreateProjectElement(node),
                 description = "Активированный элемент.",
                 status = "Элемент проекта успешно активирован."
+            };
+        }
+
+        [ToolDef(
+            Name = "project_get_messages",
+            Domain = ToolDomains.Project,
+            Description = "Возвращает список активных сообщений.",
+            InputSchema = @"{
+              'type': 'object',
+              'properties': {
+                'filter': {
+                  'type': 'object',
+                  'description': 'Необязательный фильтр сообщений. Без фильтра возвращаются все активные сообщения.',
+                  'properties': {
+                    'source': { 'type': 'string', 'description': 'Источник сообщения.' },
+                    'level': { 'type': 'string', 'enum': ['Error', 'Warning', 'Information'], 'description': 'Уровень сообщения.' }
+                  },
+                  'additionalProperties': false
+                }
+              },
+              'additionalProperties': false
+            }",
+            ReadOnlyHint = true,
+            DestructiveHint = false,
+            IdempotentHint = true
+        )]
+        public object GetMessages(Dictionary<string, object> args)
+        {
+            var filter = JsonUtils.GetObject(args, "filter", null);
+            var source = filter == null ? null : JsonUtils.GetString(filter, "source", null);
+            var level = filter == null ? null : JsonUtils.GetString(filter, "level", null);
+            if (level != null && !Enum.IsDefined(typeof(TaskLevel), level))
+                throw new BadRequestException("level должен быть Error, Warning или Information.");
+
+            var logger = Container.GetSingleton<IRoburLogger>();
+            var messages = logger.GetLog()
+                .Where(entry => (source == null || entry.Source == source) && (level == null || string.Equals(entry.Level.ToString(), level)))
+                .Select(entry =>
+                    new
+                    {
+                        source = entry.Source ?? "none",
+                        level = entry.Level.ToString(),
+                        message = entry.Message ?? "none"
+                    }
+                ).ToArray();
+
+            return new
+            {
+                result = new { messages },
+                description = "Активные сообщения для пользователя.",
+                status = "Активные сообщения успешно получены."
             };
         }
 

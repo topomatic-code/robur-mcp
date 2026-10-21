@@ -69,6 +69,10 @@
       <HintPath>$(RoburReferencesPath)\Topomatic.Alg.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="Topomatic.Alg.Model, Version=16.0.65.149, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Out\Bin\Topomatic.Alg.Model.dll</HintPath>
+    </Reference>
     <Reference Include="Topomatic.ApplicationEnvironment, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(RoburReferencesPath)\Topomatic.ApplicationEnvironment.dll</HintPath>
@@ -226,8 +230,11 @@
     <Compile Include="Services\IAlignmentProvider.cs" />
     <Compile Include="Services\Implementation\AlignmentProvider.cs" />
     <Compile Include="Services\Implementation\DrawingProvider.cs" />
+    <Compile Include="Services\Implementation\RoburLogger.cs" />
     <Compile Include="Services\IObjectStorage.cs" />
     <Compile Include="Services\IProjectManager.cs" />
+    <Compile Include="Services\IRoburLogger.cs" />
+    <Compile Include="Services\Models\LogEntry.cs" />
     <Compile Include="Services\Models\ProjectNodeTypes.cs" />
     <Compile Include="Services\Models\WindowInfo.cs" />
     <Compile Include="Settings\IMcpSettings.cs" />
