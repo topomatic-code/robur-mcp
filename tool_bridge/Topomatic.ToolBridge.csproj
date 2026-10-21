@@ -69,9 +69,10 @@
       <HintPath>$(RoburReferencesPath)\Topomatic.Alg.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="Topomatic.Alg.Model, Version=16.0.65.149, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
+    <Reference Include="Topomatic.Alg.Model, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\Out\Bin\Topomatic.Alg.Model.dll</HintPath>
+      <HintPath>$(RoburReferencesPath)\Topomatic.Alg.Model.dll</HintPath>
+      <Private>False</Private>
     </Reference>
     <Reference Include="Topomatic.ApplicationEnvironment, Version=16.0.60.0, Culture=neutral, PublicKeyToken=e252492115b01327, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
