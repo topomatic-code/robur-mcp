@@ -5,7 +5,7 @@
 | Проект проверок | Назначение и подробная документация |
 | --- | --- |
 | [ToolBridge.Tests.ApiCheck_v0.1.0](ToolBridge.Tests.ApiCheck_v0.1.0/README.md) | Сохранение контракта C# API 0.1.0 и интеграция провайдера с ToolBridge. |
-| [ToolBridge.Tests.Core](ToolBridge.Tests.Core/README.md) | DI-контейнер и инструменты AlgTools: сведения о трассе, параметры и конструкции поперечных профилей. |
+| [ToolBridge.Tests.Core](ToolBridge.Tests.Core/README.md) | DI-контейнер, сообщения проекта (ProjectTools), сведения о трассе и навигация по поперечникам (AlgTools), работа с чертежом (DwgTools). |
 
 ## Сборка и запуск
 
